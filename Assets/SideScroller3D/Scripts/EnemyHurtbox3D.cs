@@ -2,20 +2,20 @@ using UnityEngine;
 
 public class EnemyHurtbox3D : MonoBehaviour
 {
-    [Header("敵人受擊判定")]
-    [Tooltip("受到玩家武器命中時，要扣血的 Health。留空時會自動尋找父物件上的 Health。")]
+    [Header("\u6575\u4eba\u53d7\u64ca\u5224\u5b9a")]
+    [Tooltip("\u53d7\u5230\u73a9\u5bb6\u6b66\u5668\u547d\u4e2d\u6642\uff0c\u8981\u6263\u8840\u7684 Health\u3002\u7559\u7a7a\u6642\u6703\u81ea\u52d5\u5c0b\u627e\u7236\u7269\u4ef6\u4e0a\u7684 Health\u3002")]
     [SerializeField] private Health targetHealth;
 
-    [Tooltip("開啟後，編輯模式會依照敵人可見模型自動調整 Box Collider。關閉後可直接手動調 Collider。")]
+    [Tooltip("\u958b\u555f\u5f8c\uff0c\u7de8\u8f2f\u6a21\u5f0f\u6703\u4f9d\u7167\u6575\u4eba\u53ef\u898b\u6a21\u578b\u81ea\u52d5\u8abf\u6574 Box Collider\u3002\u95dc\u9589\u5f8c\u53ef\u76f4\u63a5\u624b\u52d5\u8abf Collider\u3002")]
     [SerializeField] private bool fitToVisibleModel = true;
 
-    [Tooltip("開啟後，Play 模式也會持續依照模型邊界更新 Collider。通常關閉，避免手動調整被覆蓋。")]
+    [Tooltip("\u958b\u555f\u5f8c\uff0cPlay \u6a21\u5f0f\u4e5f\u6703\u6301\u7e8c\u4f9d\u7167\u6a21\u578b\u908a\u754c\u66f4\u65b0 Collider\u3002\u901a\u5e38\u95dc\u9589\uff0c\u907f\u514d\u624b\u52d5\u8abf\u6574\u88ab\u8986\u84cb\u3002")]
     [SerializeField] private bool updateColliderDuringPlay;
 
-    [Tooltip("自動依照模型建立受擊範圍時，額外外擴的尺寸。")]
+    [Tooltip("\u81ea\u52d5\u4f9d\u7167\u6a21\u578b\u5efa\u7acb\u53d7\u64ca\u7bc4\u570d\u6642\uff0c\u984d\u5916\u5916\u64f4\u7684\u5c3a\u5bf8\u3002")]
     [SerializeField] private Vector3 modelBoundsPadding = new Vector3(0.12f, 0.16f, 0.12f);
 
-    [Tooltip("自動建立受擊範圍時允許的最小大小，避免模型太小造成判定過窄。")]
+    [Tooltip("\u81ea\u52d5\u5efa\u7acb\u53d7\u64ca\u7bc4\u570d\u6642\u5141\u8a31\u7684\u6700\u5c0f\u5927\u5c0f\uff0c\u907f\u514d\u6a21\u578b\u592a\u5c0f\u9020\u6210\u5224\u5b9a\u904e\u7a84\u3002")]
     [SerializeField] private Vector3 minimumHurtboxSize = new Vector3(0.7f, 1.2f, 0.7f);
 
     private BoxCollider hurtbox;

@@ -2,8 +2,6 @@ using UnityEngine;
 
 [RequireComponent(typeof(Health))]
 [RequireComponent(typeof(Rigidbody))]
-// 讀取敵人的 Rigidbody 速度與戰鬥狀態，並把 Speed、Attack、InCombat 參數送進子物件上的 Animator。
-// 這支腳本沒有 Inspector 可調參數；動畫片段與狀態切換主要由 Animator Controller 決定。
 public class EnemyVisualAnimator : MonoBehaviour
 {
     private const string EnemyAttackClipName = "Monster_01_Atk_01";
@@ -19,6 +17,9 @@ public class EnemyVisualAnimator : MonoBehaviour
     private bool hitPaused;
     private float hitPauseNormalizedTime = 0.5f;
     private float animatorSpeedBeforeHitPause = 1f;
+    private bool attackSpeedOverrideActive;
+    private float attackSpeedRestoreTime;
+    private float animatorSpeedBeforeAttack = 1f;
 
     private void Awake()
     {
@@ -29,6 +30,7 @@ public class EnemyVisualAnimator : MonoBehaviour
     private void OnDisable()
     {
         ResumeHit();
+        ClearAttackSpeedOverride();
     }
 
     private void Update()
@@ -40,10 +42,21 @@ public class EnemyVisualAnimator : MonoBehaviour
         }
 
         animator.SetFloat(SpeedHash, Vector3.ProjectOnPlane(body.linearVelocity, Vector3.up).magnitude);
+        UpdateAttackSpeedOverride();
         UpdateHitPause();
     }
 
     public float PlayAttack()
+    {
+        return PlayAttack(1f);
+    }
+
+    public float PlayAttack(float speedMultiplier)
+    {
+        return PlayAttack(speedMultiplier, 0f);
+    }
+
+    public float PlayAttack(float speedMultiplier, float restoreAfterSeconds)
     {
         animator = animator != null ? animator : GetComponentInChildren<Animator>();
         if (animator == null)
@@ -51,10 +64,16 @@ public class EnemyVisualAnimator : MonoBehaviour
             return 0f;
         }
 
+        float attackClipLength = GetAttackClipLength();
+        float resolvedSpeedMultiplier = Mathf.Max(0.01f, speedMultiplier);
+        float adjustedAttackLength = attackClipLength / resolvedSpeedMultiplier;
+        float speedRestoreSeconds = restoreAfterSeconds > 0f ? restoreAfterSeconds : adjustedAttackLength;
+        ApplyAttackSpeedOverride(resolvedSpeedMultiplier, speedRestoreSeconds);
+
         if (HasAnimatorParameter(AttackHash))
         {
             animator.SetTrigger(AttackHash);
-            return GetAttackClipLength();
+            return adjustedAttackLength;
         }
 
         if (animator.HasState(0, AttackHash))
@@ -62,7 +81,13 @@ public class EnemyVisualAnimator : MonoBehaviour
             animator.CrossFade(AttackHash, 0.04f, 0, 0f);
         }
 
-        return GetAttackClipLength();
+        return adjustedAttackLength;
+    }
+
+    public float GetAttackAnimationLength()
+    {
+        animator = animator != null ? animator : GetComponentInChildren<Animator>();
+        return animator != null ? GetAttackClipLength() : 0f;
     }
 
     public float PlayHit()
@@ -143,6 +168,49 @@ public class EnemyVisualAnimator : MonoBehaviour
         animatorSpeedBeforeHitPause = animator.speed;
         animator.speed = 0f;
         hitPaused = true;
+    }
+
+    private void ApplyAttackSpeedOverride(float speedMultiplier, float restoreAfterSeconds)
+    {
+        if (speedMultiplier <= 1.0001f || restoreAfterSeconds <= 0f)
+        {
+            ClearAttackSpeedOverride();
+            return;
+        }
+
+        if (!attackSpeedOverrideActive)
+        {
+            animatorSpeedBeforeAttack = animator.speed;
+        }
+
+        animator.speed = animatorSpeedBeforeAttack * speedMultiplier;
+        attackSpeedRestoreTime = Time.time + restoreAfterSeconds;
+        attackSpeedOverrideActive = true;
+    }
+
+    private void UpdateAttackSpeedOverride()
+    {
+        if (!attackSpeedOverrideActive || hitPaused || Time.time < attackSpeedRestoreTime)
+        {
+            return;
+        }
+
+        ClearAttackSpeedOverride();
+    }
+
+    private void ClearAttackSpeedOverride()
+    {
+        if (!attackSpeedOverrideActive)
+        {
+            return;
+        }
+
+        if (animator != null)
+        {
+            animator.speed = animatorSpeedBeforeAttack;
+        }
+
+        attackSpeedOverrideActive = false;
     }
 
     private bool HasAnimatorParameter(int parameterHash)

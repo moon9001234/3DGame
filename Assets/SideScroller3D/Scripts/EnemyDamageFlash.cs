@@ -4,17 +4,17 @@ using UnityEngine;
 
 [DisallowMultipleComponent]
 [RequireComponent(typeof(Health))]
-// 敵人受到傷害時，短暫把模型材質與點光源切成受擊顏色。
+// \u6575\u4eba\u53d7\u5230\u50b7\u5bb3\u6642\uff0c\u77ed\u66ab\u628a\u6a21\u578b\u6750\u8cea\u8207\u9ede\u5149\u6e90\u5207\u6210\u53d7\u64ca\u984f\u8272\u3002
 public class EnemyDamageFlash : MonoBehaviour
 {
-    [Header("受傷閃光設定")]
-    [Tooltip("敵人受到傷害時，模型材質會短暫切換成這個顏色。")]
+    [Header("\u53d7\u50b7\u9583\u5149\u8a2d\u5b9a")]
+    [Tooltip("\u6575\u4eba\u53d7\u5230\u50b7\u5bb3\u6642\uff0c\u6a21\u578b\u6750\u8cea\u6703\u77ed\u66ab\u5207\u63db\u6210\u9019\u500b\u984f\u8272\u3002")]
     [SerializeField] private Color flashColor = new Color(1f, 0.04f, 0.02f, 1f);
 
-    [Tooltip("敵人受傷閃光時的自發光顏色。數值可以大於 1，讓閃光更亮。")]
+    [Tooltip("\u6575\u4eba\u53d7\u50b7\u9583\u5149\u6642\u7684\u81ea\u767c\u5149\u984f\u8272\u3002\u6578\u503c\u53ef\u4ee5\u5927\u65bc 1\uff0c\u8b93\u9583\u5149\u66f4\u4eae\u3002")]
     [SerializeField] private Color emissionColor = new Color(3f, 0.05f, 0.02f, 1f);
 
-    [Tooltip("受傷閃光維持的秒數。數值越大，紅光停留越久。")]
+    [Tooltip("\u53d7\u50b7\u9583\u5149\u7dad\u6301\u7684\u79d2\u6578\u3002\u6578\u503c\u8d8a\u5927\uff0c\u7d05\u5149\u505c\u7559\u8d8a\u4e45\u3002")]
     [SerializeField] private float flashDuration = 0.12f;
 
     private readonly Dictionary<Material, MaterialSnapshot> materialSnapshots = new Dictionary<Material, MaterialSnapshot>();

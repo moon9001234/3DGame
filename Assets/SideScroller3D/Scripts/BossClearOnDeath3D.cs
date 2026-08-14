@@ -10,7 +10,7 @@ public class BossClearOnDeath3D : MonoBehaviour
     private const string LegacyClearCanvasName = "Game Clear Canvas";
 
     [Header("Clear UI")]
-    [SerializeField] private string clearMessage = "恭喜通關";
+    [SerializeField] private string clearMessage = "\u606d\u559c\u901a\u95dc";
     [SerializeField] private Color messageColor = new Color(1f, 0.92f, 0.35f, 1f);
     [SerializeField] private Color backgroundColor = new Color(0f, 0f, 0f, 0.62f);
     [SerializeField] private int fontSize = 64;

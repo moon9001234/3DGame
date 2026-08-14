@@ -22,7 +22,7 @@ public static class SampleScene02CameraInstaller
         "Lantern"
     };
 
-    [MenuItem("Tools/3D 遊戲工具/設定 SampleScene 02 鏡頭")]
+    [MenuItem("Tools/3D \u904a\u6232\u5de5\u5177/\u8a2d\u5b9a SampleScene 02 \u93e1\u982d")]
     public static void Apply()
     {
         Scene scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);

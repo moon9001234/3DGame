@@ -7,7 +7,7 @@ public static class PrototypeShadowSettingsInstaller
 {
     private const string ScenePath = "Assets/SideScroller3D/Scenes/Prototype.unity";
 
-    [MenuItem("Tools/3D 遊戲工具/套用原型陰影設定")]
+    [MenuItem("Tools/3D \u904a\u6232\u5de5\u5177/\u5957\u7528\u539f\u578b\u9670\u5f71\u8a2d\u5b9a")]
     public static void Apply()
     {
         Scene scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);

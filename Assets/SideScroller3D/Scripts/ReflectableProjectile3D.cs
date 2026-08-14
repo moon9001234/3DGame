@@ -3,26 +3,26 @@ using UnityEngine;
 [RequireComponent(typeof(BoxCollider))]
 public class ReflectableProjectile3D : MonoBehaviour
 {
-    [Header("投射物")]
-    [Tooltip("火球飛行速度。敵人發射時會由 EnemyPatrol3D 的 Projectile Speed 覆蓋。")]
+    [Header("\u6295\u5c04\u7269")]
+    [Tooltip("\u706b\u7403\u98db\u884c\u901f\u5ea6\u3002\u6575\u4eba\u767c\u5c04\u6642\u6703\u7531 EnemyPatrol3D \u7684 Projectile Speed \u8986\u84cb\u3002")]
     [SerializeField] private float speed = 5.5f;
 
-    [Tooltip("火球存在幾秒後自動消失。敵人發射時會由 EnemyPatrol3D 的 Projectile Lifetime 覆蓋。")]
+    [Tooltip("\u706b\u7403\u5b58\u5728\u5e7e\u79d2\u5f8c\u81ea\u52d5\u6d88\u5931\u3002\u6575\u4eba\u767c\u5c04\u6642\u6703\u7531 EnemyPatrol3D \u7684 Projectile Lifetime \u8986\u84cb\u3002")]
     [SerializeField] private float lifetime = 5f;
 
-    [Tooltip("火球命中玩家時造成的傷害。敵人發射時會由 EnemyPatrol3D 的 Projectile Damage 覆蓋。")]
+    [Tooltip("\u706b\u7403\u547d\u4e2d\u73a9\u5bb6\u6642\u9020\u6210\u7684\u50b7\u5bb3\u3002\u6575\u4eba\u767c\u5c04\u6642\u6703\u7531 EnemyPatrol3D \u7684 Projectile Damage \u8986\u84cb\u3002")]
     [SerializeField] private int damage = 1;
 
-    [Tooltip("火球被玩家反擊後命中敵人時造成的傷害。預設會同步使用敵人的 Projectile Damage。")]
+    [Tooltip("\u706b\u7403\u88ab\u73a9\u5bb6\u53cd\u64ca\u5f8c\u547d\u4e2d\u6575\u4eba\u6642\u9020\u6210\u7684\u50b7\u5bb3\u3002\u9810\u8a2d\u6703\u540c\u6b65\u4f7f\u7528\u6575\u4eba\u7684 Projectile Damage\u3002")]
     [SerializeField] private int reflectedDamage = 1;
 
-    [Tooltip("火球正常飛行時套用到 Renderer 的顏色。")]
+    [Tooltip("\u706b\u7403\u6b63\u5e38\u98db\u884c\u6642\u5957\u7528\u5230 Renderer \u7684\u984f\u8272\u3002")]
     [SerializeField] private Color fireColor = new Color(1f, 0.35f, 0.05f, 1f);
 
-    [Tooltip("火球被玩家反擊後套用到 Renderer 的顏色。")]
+    [Tooltip("\u706b\u7403\u88ab\u73a9\u5bb6\u53cd\u64ca\u5f8c\u5957\u7528\u5230 Renderer \u7684\u984f\u8272\u3002")]
     [SerializeField] private Color reflectedColor = new Color(0.25f, 0.85f, 1f, 1f);
 
-    [Tooltip("開啟後，玩家攻擊火球時可以把火球反彈回敵人。Boss 火球通常關閉。")]
+    [Tooltip("\u958b\u555f\u5f8c\uff0c\u73a9\u5bb6\u653b\u64ca\u706b\u7403\u6642\u53ef\u4ee5\u628a\u706b\u7403\u53cd\u5f48\u56de\u6575\u4eba\u3002Boss \u706b\u7403\u901a\u5e38\u95dc\u9589\u3002")]
     [SerializeField] private bool canBeReflected = true;
 
     private Vector3 direction = Vector3.right;

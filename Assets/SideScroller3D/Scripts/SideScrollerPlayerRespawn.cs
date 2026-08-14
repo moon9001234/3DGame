@@ -1,11 +1,11 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-// 玩家死亡後延遲重新載入目前場景，作為暫代重生流程。
+// \u73a9\u5bb6\u6b7b\u4ea1\u5f8c\u5ef6\u9072\u91cd\u65b0\u8f09\u5165\u76ee\u524d\u5834\u666f\uff0c\u4f5c\u70ba\u66ab\u4ee3\u91cd\u751f\u6d41\u7a0b\u3002
 public class SideScrollerPlayerRespawn : MonoBehaviour
 {
-    [Header("重生設定")]
-    [Tooltip("玩家死亡後，等待幾秒才重新載入目前場景。")]
+    [Header("\u91cd\u751f\u8a2d\u5b9a")]
+    [Tooltip("\u73a9\u5bb6\u6b7b\u4ea1\u5f8c\uff0c\u7b49\u5f85\u5e7e\u79d2\u624d\u91cd\u65b0\u8f09\u5165\u76ee\u524d\u5834\u666f\u3002")]
     [SerializeField] private float reloadDelay = 1.2f;
 
     private Health health;

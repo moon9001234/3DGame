@@ -1,78 +1,78 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 public class SideScrollerCamera : MonoBehaviour
 {
-    [Header("跟隨目標")]
-    [Tooltip("攝影機要跟隨的玩家角色。")]
+    [Header("\u8ddf\u96a8\u76ee\u6a19")]
+    [Tooltip("\u651d\u5f71\u6a5f\u8981\u8ddf\u96a8\u7684\u73a9\u5bb6\u89d2\u8272\u3002")]
     [SerializeField] private Transform target;
 
-    [Tooltip("用角色 Collider 中心判斷垂直畫面位置，避免 Player 原點在腳底時判斷不準。")]
+    [Tooltip("\u7528\u89d2\u8272 Collider \u4e2d\u5fc3\u5224\u65b7\u5782\u76f4\u756b\u9762\u4f4d\u7f6e\uff0c\u907f\u514d Player \u539f\u9ede\u5728\u8173\u5e95\u6642\u5224\u65b7\u4e0d\u6e96\u3002")]
     [SerializeField] private bool useColliderCenterForVerticalFraming = true;
 
-    [Tooltip("攝影機與玩家之間的本地座標偏移。X 是畫面左右，Y 是上下，Z 是鏡頭前後；攝影機 Yaw 不是 0 時也會正確跟隨。")]
+    [Tooltip("\u651d\u5f71\u6a5f\u8207\u73a9\u5bb6\u4e4b\u9593\u7684\u672c\u5730\u5ea7\u6a19\u504f\u79fb\u3002X \u662f\u756b\u9762\u5de6\u53f3\uff0cY \u662f\u4e0a\u4e0b\uff0cZ \u662f\u93e1\u982d\u524d\u5f8c\uff1b\u651d\u5f71\u6a5f Yaw \u4e0d\u662f 0 \u6642\u4e5f\u6703\u6b63\u78ba\u8ddf\u96a8\u3002")]
     [SerializeField] private Vector3 offset = new Vector3(0f, 2f, -10f);
 
-    [Tooltip("攝影機跟上目標位置的速度。")]
+    [Tooltip("\u651d\u5f71\u6a5f\u8ddf\u4e0a\u76ee\u6a19\u4f4d\u7f6e\u7684\u901f\u5ea6\u3002")]
     [SerializeField] private float followSpeed = 8f;
 
-    [Header("水平死區")]
-    [Tooltip("開啟後，玩家在水平死區內移動時，攝影機不會水平跟隨。")]
+    [Header("\u6c34\u5e73\u6b7b\u5340")]
+    [Tooltip("\u958b\u555f\u5f8c\uff0c\u73a9\u5bb6\u5728\u6c34\u5e73\u6b7b\u5340\u5167\u79fb\u52d5\u6642\uff0c\u651d\u5f71\u6a5f\u4e0d\u6703\u6c34\u5e73\u8ddf\u96a8\u3002")]
     [SerializeField] private bool useHorizontalDeadZone = true;
 
-    [Tooltip("畫面水平死區範圍，0 是畫面最左側，1 是畫面最右側。")]
+    [Tooltip("\u756b\u9762\u6c34\u5e73\u6b7b\u5340\u7bc4\u570d\uff0c0 \u662f\u756b\u9762\u6700\u5de6\u5074\uff0c1 \u662f\u756b\u9762\u6700\u53f3\u5074\u3002")]
     [SerializeField] private Vector2 horizontalDeadZoneViewport = new Vector2(0.35f, 0.65f);
 
-    [Header("場景攝影機姿勢")]
-    [Tooltip("Play 後採用場景中已經擺好的攝影機位置作為初始偏移。")]
+    [Header("\u5834\u666f\u651d\u5f71\u6a5f\u59ff\u52e2")]
+    [Tooltip("Play \u5f8c\u63a1\u7528\u5834\u666f\u4e2d\u5df2\u7d93\u64fa\u597d\u7684\u651d\u5f71\u6a5f\u4f4d\u7f6e\u4f5c\u70ba\u521d\u59cb\u504f\u79fb\u3002")]
     [SerializeField] private bool useSceneCameraPoseOnPlay = true;
 
-    [Tooltip("Play 後保持場景中已經擺好的攝影機旋轉。")]
+    [Tooltip("Play \u5f8c\u4fdd\u6301\u5834\u666f\u4e2d\u5df2\u7d93\u64fa\u597d\u7684\u651d\u5f71\u6a5f\u65cb\u8f49\u3002")]
     [SerializeField] private bool keepSceneRotation = true;
 
-    [Header("跳板垂直跟隨")]
-    [Tooltip("開啟後，玩家站在 OneWayPlatform3D 或從它起跳時，攝影機會跟隨玩家 Y 軸。")]
+    [Header("\u8df3\u677f\u5782\u76f4\u8ddf\u96a8")]
+    [Tooltip("\u958b\u555f\u5f8c\uff0c\u73a9\u5bb6\u7ad9\u5728 OneWayPlatform3D \u6216\u5f9e\u5b83\u8d77\u8df3\u6642\uff0c\u651d\u5f71\u6a5f\u6703\u8ddf\u96a8\u73a9\u5bb6 Y \u8ef8\u3002")]
     [SerializeField] private bool enableOneWayPlatformVerticalFollow = true;
 
-    [Tooltip("離開跳板後，仍視為跳板起跳的短暫時間。")]
+    [Tooltip("\u96e2\u958b\u8df3\u677f\u5f8c\uff0c\u4ecd\u8996\u70ba\u8df3\u677f\u8d77\u8df3\u7684\u77ed\u66ab\u6642\u9593\u3002")]
     [SerializeField] private float oneWayPlatformGraceSeconds = 0.25f;
 
-    [Header("移動邊界")]
-    [Tooltip("攝影機 X 軸可移動範圍。")]
+    [Header("\u79fb\u52d5\u908a\u754c")]
+    [Tooltip("\u651d\u5f71\u6a5f X \u8ef8\u53ef\u79fb\u52d5\u7bc4\u570d\u3002")]
     [SerializeField] private Vector2 xBounds = new Vector2(-3f, 100f);
 
-    [Tooltip("攝影機 Y 軸可移動範圍。")]
+    [Tooltip("\u651d\u5f71\u6a5f Y \u8ef8\u53ef\u79fb\u52d5\u7bc4\u570d\u3002")]
     [SerializeField] private Vector2 yBounds = new Vector2(-20f, 30f);
 
-    [Tooltip("攝影機轉角後沿世界 Z 軸移動時的可移動範圍。")]
+    [Tooltip("\u651d\u5f71\u6a5f\u8f49\u89d2\u5f8c\u6cbf\u4e16\u754c Z \u8ef8\u79fb\u52d5\u6642\u7684\u53ef\u79fb\u52d5\u7bc4\u570d\u3002")]
     [SerializeField] private Vector2 zBounds = new Vector2(-3f, 50f);
 
-    [Tooltip("開啟後，攝影機轉向後不再使用世界 X Bounds，避免 X Bounds 把攝影機推到角色身上。")]
+    [Tooltip("\u958b\u555f\u5f8c\uff0c\u651d\u5f71\u6a5f\u8f49\u5411\u5f8c\u4e0d\u518d\u4f7f\u7528\u4e16\u754c X Bounds\uff0c\u907f\u514d X Bounds \u628a\u651d\u5f71\u6a5f\u63a8\u5230\u89d2\u8272\u8eab\u4e0a\u3002")]
     [SerializeField] private bool disableXBoundsAfterCameraTurn = true;
 
-    [Header("移動邊界視覺化")]
-    [Tooltip("在 Scene 視窗顯示攝影機 X/Y 移動邊界。")]
+    [Header("\u79fb\u52d5\u908a\u754c\u8996\u89ba\u5316")]
+    [Tooltip("\u5728 Scene \u8996\u7a97\u986f\u793a\u651d\u5f71\u6a5f X/Y \u79fb\u52d5\u908a\u754c\u3002")]
     [SerializeField] private bool showMovementBoundsGizmo = true;
 
-    [Tooltip("開啟後，不需要選取攝影機也會顯示移動邊界。")]
+    [Tooltip("\u958b\u555f\u5f8c\uff0c\u4e0d\u9700\u8981\u9078\u53d6\u651d\u5f71\u6a5f\u4e5f\u6703\u986f\u793a\u79fb\u52d5\u908a\u754c\u3002")]
     [SerializeField] private bool alwaysShowMovementBoundsGizmo;
 
-    [Tooltip("移動邊界線框顏色。")]
+    [Tooltip("\u79fb\u52d5\u908a\u754c\u7dda\u6846\u984f\u8272\u3002")]
     [SerializeField] private Color movementBoundsGizmoColor = new Color(0.15f, 0.75f, 1f, 0.75f);
 
-    [Tooltip("線框在 Z 軸上的中心位置；通常可設成玩家或關卡所在的 Z。")]
+    [Tooltip("\u7dda\u6846\u5728 Z \u8ef8\u4e0a\u7684\u4e2d\u5fc3\u4f4d\u7f6e\uff1b\u901a\u5e38\u53ef\u8a2d\u6210\u73a9\u5bb6\u6216\u95dc\u5361\u6240\u5728\u7684 Z\u3002")]
     [SerializeField] private float movementBoundsGizmoCenterZ;
 
-    [Tooltip("線框在 Z 軸上的厚度，方便從不同角度看到邊界。")]
+    [Tooltip("\u7dda\u6846\u5728 Z \u8ef8\u4e0a\u7684\u539a\u5ea6\uff0c\u65b9\u4fbf\u5f9e\u4e0d\u540c\u89d2\u5ea6\u770b\u5230\u908a\u754c\u3002")]
     [SerializeField] private float movementBoundsGizmoDepth = 1f;
 
-    [Header("轉角攝影機")]
-    [Tooltip("開啟後，轉角旋轉結束時會把角色的水平畫面位置左右對調，例如右下角會變成左下角。")]
+    [Header("\u8f49\u89d2\u651d\u5f71\u6a5f")]
+    [Tooltip("\u958b\u555f\u5f8c\uff0c\u8f49\u89d2\u65cb\u8f49\u7d50\u675f\u6642\u6703\u628a\u89d2\u8272\u7684\u6c34\u5e73\u756b\u9762\u4f4d\u7f6e\u5de6\u53f3\u5c0d\u8abf\uff0c\u4f8b\u5982\u53f3\u4e0b\u89d2\u6703\u8b8a\u6210\u5de6\u4e0b\u89d2\u3002")]
     [SerializeField] private bool mirrorViewportXOnTurn = true;
 
-    [Tooltip("轉角後角色在畫面左右位置的最小值，避免太貼畫面邊緣。")]
+    [Tooltip("\u8f49\u89d2\u5f8c\u89d2\u8272\u5728\u756b\u9762\u5de6\u53f3\u4f4d\u7f6e\u7684\u6700\u5c0f\u503c\uff0c\u907f\u514d\u592a\u8cbc\u756b\u9762\u908a\u7de3\u3002")]
     [SerializeField] private float turnViewportMinX = 0.18f;
 
-    [Tooltip("轉角後角色在畫面左右位置的最大值，避免太貼畫面邊緣。")]
+    [Tooltip("\u8f49\u89d2\u5f8c\u89d2\u8272\u5728\u756b\u9762\u5de6\u53f3\u4f4d\u7f6e\u7684\u6700\u5927\u503c\uff0c\u907f\u514d\u592a\u8cbc\u756b\u9762\u908a\u7de3\u3002")]
     [SerializeField] private float turnViewportMaxX = 0.82f;
 
     private Camera cameraComponent;

@@ -14,26 +14,26 @@ public class CornerTurnTrigger3D : MonoBehaviour
         Left
     }
 
-    [Header("轉角設定")]
-    [Tooltip("玩家第一次走到觸發器中心時要往右轉或往左轉。")]
+    [Header("\u8f49\u89d2\u8a2d\u5b9a")]
+    [Tooltip("\u73a9\u5bb6\u7b2c\u4e00\u6b21\u8d70\u5230\u89f8\u767c\u5668\u4e2d\u5fc3\u6642\u8981\u5f80\u53f3\u8f49\u6216\u5f80\u5de6\u8f49\u3002")]
     [SerializeField] private TurnDirection firstTurnDirection = TurnDirection.Left;
 
-    [Tooltip("轉向角度。一般街角使用 90 度。")]
+    [Tooltip("\u8f49\u5411\u89d2\u5ea6\u3002\u4e00\u822c\u8857\u89d2\u4f7f\u7528 90 \u5ea6\u3002")]
     [SerializeField] private float turnDegrees = 90f;
 
-    [Tooltip("攝影機旋轉時間，同時也是玩家操作鎖定時間。")]
+    [Tooltip("\u651d\u5f71\u6a5f\u65cb\u8f49\u6642\u9593\uff0c\u540c\u6642\u4e5f\u662f\u73a9\u5bb6\u64cd\u4f5c\u9396\u5b9a\u6642\u9593\u3002")]
     [SerializeField] private float turnDuration = 1.2f;
 
-    [Tooltip("開啟後，每次觸發後會自動反向，讓玩家再次碰到時可以轉回去。")]
+    [Tooltip("\u958b\u555f\u5f8c\uff0c\u6bcf\u6b21\u89f8\u767c\u5f8c\u6703\u81ea\u52d5\u53cd\u5411\uff0c\u8b93\u73a9\u5bb6\u518d\u6b21\u78b0\u5230\u6642\u53ef\u4ee5\u8f49\u56de\u53bb\u3002")]
     [SerializeField] private bool alternateDirection;
 
-    [Tooltip("開啟後，轉角會依照玩家進入 Trigger 的方向決定旋轉方向。從另一側進入時會自動反向旋轉。")]
+    [Tooltip("\u958b\u555f\u5f8c\uff0c\u8f49\u89d2\u6703\u4f9d\u7167\u73a9\u5bb6\u9032\u5165 Trigger \u7684\u65b9\u5411\u6c7a\u5b9a\u65cb\u8f49\u65b9\u5411\u3002\u5f9e\u53e6\u4e00\u5074\u9032\u5165\u6642\u6703\u81ea\u52d5\u53cd\u5411\u65cb\u8f49\u3002")]
     [SerializeField] private bool turnDirectionFollowsEntrySide = true;
 
-    [Tooltip("玩家沿目前移動方向距離觸發器中心小於這個值時才觸發。")]
+    [Tooltip("\u73a9\u5bb6\u6cbf\u76ee\u524d\u79fb\u52d5\u65b9\u5411\u8ddd\u96e2\u89f8\u767c\u5668\u4e2d\u5fc3\u5c0f\u65bc\u9019\u500b\u503c\u6642\u624d\u89f8\u767c\u3002")]
     [SerializeField] private float centerTriggerDistance = 0.15f;
 
-    [Tooltip("要旋轉的攝影機。沒有指定時會自動抓 Main Camera。")]
+    [Tooltip("\u8981\u65cb\u8f49\u7684\u651d\u5f71\u6a5f\u3002\u6c92\u6709\u6307\u5b9a\u6642\u6703\u81ea\u52d5\u6293 Main Camera\u3002")]
     [SerializeField] private SideScrollerCamera sideScrollerCamera;
 
     [Header("Turn Direction Guide")]

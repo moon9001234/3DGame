@@ -10,7 +10,7 @@ public static class SideScrollerPrototypeBuilder
     private const string ScenePath = "Assets/SideScroller3D/Scenes/Prototype.unity";
     private const string HitEffectPrefabPath = "Assets/Art/Prefab/FX/FX_Hit.prefab";
 
-    [MenuItem("Tools/3D 遊戲工具/建立原型場景")]
+    [MenuItem("Tools/3D \u904a\u6232\u5de5\u5177/\u5efa\u7acb\u539f\u578b\u5834\u666f")]
     public static void CreatePrototypeScene()
     {
         EnsureFolder("Assets/SideScroller3D");

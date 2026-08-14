@@ -143,29 +143,29 @@ public class EnemyPatrol3D : MonoBehaviour
         }
     }
 
-    [Header("敵人類型")]
-    [Tooltip("敵人的攻擊模式。Melee 是近戰，Ranged 是遠程火球。")]
+    [Header("\u6575\u4eba\u985e\u578b")]
+    [Tooltip("\u6575\u4eba\u7684\u653b\u64ca\u6a21\u5f0f\u3002Melee \u662f\u8fd1\u6230\uff0cRanged \u662f\u9060\u7a0b\u706b\u7403\u3002")]
     [SerializeField] private AttackMode attackMode = AttackMode.Melee;
 
-    [Header("巡邏")]
-    [Tooltip("開啟後，敵人會用自身 Transform 的 Right 方向當作移動、追擊與攻擊判定方向。")]
+    [Header("\u5de1\u908f")]
+    [Tooltip("\u958b\u555f\u5f8c\uff0c\u6575\u4eba\u6703\u7528\u81ea\u8eab Transform \u7684 Right \u65b9\u5411\u7576\u4f5c\u79fb\u52d5\u3001\u8ffd\u64ca\u8207\u653b\u64ca\u5224\u5b9a\u65b9\u5411\u3002")]
     [SerializeField] private MovementMode movementMode = MovementMode.Free3D;
 
     [SerializeField] private bool useTransformRightAsMovementAxis = true;
 
-    [Tooltip("關閉自動抓取時，手動指定敵人的移動軸。")]
+    [Tooltip("\u95dc\u9589\u81ea\u52d5\u6293\u53d6\u6642\uff0c\u624b\u52d5\u6307\u5b9a\u6575\u4eba\u7684\u79fb\u52d5\u8ef8\u3002")]
     [SerializeField] private Vector3 movementAxis = Vector3.right;
 
-    [Tooltip("開啟後，敵人會被限制在移動軸形成的平面上，避免走到錯誤深度。")]
+    [Tooltip("\u958b\u555f\u5f8c\uff0c\u6575\u4eba\u6703\u88ab\u9650\u5236\u5728\u79fb\u52d5\u8ef8\u5f62\u6210\u7684\u5e73\u9762\u4e0a\uff0c\u907f\u514d\u8d70\u5230\u932f\u8aa4\u6df1\u5ea6\u3002")]
     [SerializeField] private bool lockDepthToMovementPlane = true;
 
-    [Tooltip("敵人追擊玩家時的移動速度。")]
+    [Tooltip("\u6575\u4eba\u8ffd\u64ca\u73a9\u5bb6\u6642\u7684\u79fb\u52d5\u901f\u5ea6\u3002")]
     [SerializeField] private float moveSpeed = 2f;
-    [Tooltip("敵人巡邏時的移動速度。")]
+    [Tooltip("\u6575\u4eba\u5de1\u908f\u6642\u7684\u79fb\u52d5\u901f\u5ea6\u3002")]
     [SerializeField] private float patrolMoveSpeed = 1.6f;
-    [Tooltip("敵人返回出生點時，距離小於這個值就視為已經回到原位。")]
+    [Tooltip("\u6575\u4eba\u8fd4\u56de\u51fa\u751f\u9ede\u6642\uff0c\u8ddd\u96e2\u5c0f\u65bc\u9019\u500b\u503c\u5c31\u8996\u70ba\u5df2\u7d93\u56de\u5230\u539f\u4f4d\u3002")]
     [SerializeField] private float homeStopDistance = 0.12f;
-    [Tooltip("沒有可用巡邏點時，敵人會以出生點左右這個距離作為巡邏範圍。")]
+    [Tooltip("\u6c92\u6709\u53ef\u7528\u5de1\u908f\u9ede\u6642\uff0c\u6575\u4eba\u6703\u4ee5\u51fa\u751f\u9ede\u5de6\u53f3\u9019\u500b\u8ddd\u96e2\u4f5c\u70ba\u5de1\u908f\u7bc4\u570d\u3002")]
     [SerializeField] private float fallbackPatrolHalfWidth = 2f;
 
     [SerializeField] private float patrolRadius = 3f;
@@ -173,67 +173,67 @@ public class EnemyPatrol3D : MonoBehaviour
     [SerializeField] private float patrolDestinationReachDistance = 0.25f;
 
     [SerializeField] private float patrolDestinationMinDistance = 1f;
-    [Tooltip("可選的巡邏障礙 Layer 篩選。只有開啟 Use Patrol Obstacle Mask 時才會套用。")]
+    [Tooltip("\u53ef\u9078\u7684\u5de1\u908f\u969c\u7919 Layer \u7be9\u9078\u3002\u53ea\u6709\u958b\u555f Use Patrol Obstacle Mask \u6642\u624d\u6703\u5957\u7528\u3002")]
     [SerializeField] private LayerMask patrolObstacleMask;
 
-    [Tooltip("開啟後，前方障礙偵測只會偵測 Patrol Obstacle Mask 指定的 Layer。關閉時會偵測所有會阻擋移動的實體 Collider。")]
+    [Tooltip("\u958b\u555f\u5f8c\uff0c\u524d\u65b9\u969c\u7919\u5075\u6e2c\u53ea\u6703\u5075\u6e2c Patrol Obstacle Mask \u6307\u5b9a\u7684 Layer\u3002\u95dc\u9589\u6642\u6703\u5075\u6e2c\u6240\u6709\u6703\u963b\u64cb\u79fb\u52d5\u7684\u5be6\u9ad4 Collider\u3002")]
     [SerializeField] private bool usePatrolObstacleMask;
-    [Tooltip("巡邏方向前方用來偵測障礙物的距離。")]
+    [Tooltip("\u5de1\u908f\u65b9\u5411\u524d\u65b9\u7528\u4f86\u5075\u6e2c\u969c\u7919\u7269\u7684\u8ddd\u96e2\u3002")]
     [SerializeField] private float patrolObstacleCheckDistance = 0.35f;
-    [Tooltip("巡邏障礙偵測射線的三個高度，X/Y/Z 分別代表低、中、高射線。")]
+    [Tooltip("\u5de1\u908f\u969c\u7919\u5075\u6e2c\u5c04\u7dda\u7684\u4e09\u500b\u9ad8\u5ea6\uff0cX/Y/Z \u5206\u5225\u4ee3\u8868\u4f4e\u3001\u4e2d\u3001\u9ad8\u5c04\u7dda\u3002")]
     [SerializeField] private Vector3 patrolObstacleRayHeights = new Vector3(0.2f, 0.65f, 1.1f);
 
-    [Header("偵測")]
-    [Tooltip("玩家進入這個偵測盒的水平範圍後，敵人會開始追擊或進入戰鬥。")]
+    [Header("\u5075\u6e2c")]
+    [Tooltip("\u73a9\u5bb6\u9032\u5165\u9019\u500b\u5075\u6e2c\u76d2\u7684\u6c34\u5e73\u7bc4\u570d\u5f8c\uff0c\u6575\u4eba\u6703\u958b\u59cb\u8ffd\u64ca\u6216\u9032\u5165\u6230\u9b25\u3002")]
     [SerializeField] private float searchRange = 7f;
-    [Tooltip("玩家離開這個放棄偵測盒後，敵人會停止追擊並返回出生點。")]
+    [Tooltip("\u73a9\u5bb6\u96e2\u958b\u9019\u500b\u653e\u68c4\u5075\u6e2c\u76d2\u5f8c\uff0c\u6575\u4eba\u6703\u505c\u6b62\u8ffd\u64ca\u4e26\u8fd4\u56de\u51fa\u751f\u9ede\u3002")]
     [SerializeField] private float giveUpRange = 9f;
-    [Tooltip("偵測盒相對於敵人根物件的位置偏移。Y 可控制偵測盒高度中心。")]
+    [Tooltip("\u5075\u6e2c\u76d2\u76f8\u5c0d\u65bc\u6575\u4eba\u6839\u7269\u4ef6\u7684\u4f4d\u7f6e\u504f\u79fb\u3002Y \u53ef\u63a7\u5236\u5075\u6e2c\u76d2\u9ad8\u5ea6\u4e2d\u5fc3\u3002")]
     [SerializeField] private Vector3 detectionBoxOffset = new Vector3(0f, 0.75f, 0f);
-    [Tooltip("偵測盒的高度。調小可以避免玩家在敵人頭頂也觸發追擊。")]
+    [Tooltip("\u5075\u6e2c\u76d2\u7684\u9ad8\u5ea6\u3002\u8abf\u5c0f\u53ef\u4ee5\u907f\u514d\u73a9\u5bb6\u5728\u6575\u4eba\u982d\u9802\u4e5f\u89f8\u767c\u8ffd\u64ca\u3002")]
     [SerializeField] private float detectionBoxHeight = 1.6f;
-    [Tooltip("偵測盒在深度方向的厚度。")]
+    [Tooltip("\u5075\u6e2c\u76d2\u5728\u6df1\u5ea6\u65b9\u5411\u7684\u539a\u5ea6\u3002")]
     [SerializeField] private float detectionBoxDepth = 2f;
-    [Tooltip("放棄追擊的偵測盒額外外擴量，避免玩家剛到邊界就讓敵人反覆切換狀態。")]
+    [Tooltip("\u653e\u68c4\u8ffd\u64ca\u7684\u5075\u6e2c\u76d2\u984d\u5916\u5916\u64f4\u91cf\uff0c\u907f\u514d\u73a9\u5bb6\u525b\u5230\u908a\u754c\u5c31\u8b93\u6575\u4eba\u53cd\u8986\u5207\u63db\u72c0\u614b\u3002")]
     [SerializeField] private float giveUpBoxPadding = 1f;
     [Tooltip("Show the enemy detection box in the Scene view.")]
     [SerializeField] private bool showDetectionBoxGizmo = true;
     [Tooltip("If enabled, the detection box is shown only when this enemy is selected.")]
     [SerializeField] private bool onlyShowDetectionBoxWhenSelected;
 
-    [Header("近戰攻擊")]
-    [Tooltip("近戰攻擊向前打出的距離，也就是紅色攻擊框的前後長度。")]
+    [Header("\u8fd1\u6230\u653b\u64ca")]
+    [Tooltip("\u8fd1\u6230\u653b\u64ca\u5411\u524d\u6253\u51fa\u7684\u8ddd\u96e2\uff0c\u4e5f\u5c31\u662f\u7d05\u8272\u653b\u64ca\u6846\u7684\u524d\u5f8c\u9577\u5ea6\u3002")]
     [SerializeField] private float attackRange = 1.45f;
-    [Tooltip("近戰攻擊框的高度。調小可以避免打到敵人頭頂太高處的玩家。")]
+    [Tooltip("\u8fd1\u6230\u653b\u64ca\u6846\u7684\u9ad8\u5ea6\u3002\u8abf\u5c0f\u53ef\u4ee5\u907f\u514d\u6253\u5230\u6575\u4eba\u982d\u9802\u592a\u9ad8\u8655\u7684\u73a9\u5bb6\u3002")]
     [FormerlySerializedAs("verticalSearchRange")]
     [SerializeField] private float meleeAttackHeight = 2.5f;
-    [Tooltip("近戰攻擊命中玩家時造成的傷害。")]
+    [Tooltip("\u8fd1\u6230\u653b\u64ca\u547d\u4e2d\u73a9\u5bb6\u6642\u9020\u6210\u7684\u50b7\u5bb3\u3002")]
     [SerializeField] private int attackDamage = 1;
     [Tooltip("Sound played when this enemy melee attack hits the player.")]
     [SerializeField] private AudioClip meleeHitSound;
     [Tooltip("Volume for the enemy melee hit sound.")]
     [SerializeField, Range(0f, 1f)] private float meleeHitSoundVolume = 1f;
-    [Header("遠程攻擊")]
-    [Tooltip("遠程火球命中玩家或被玩家反擊後命中敵人時造成的傷害。")]
+    [Header("\u9060\u7a0b\u653b\u64ca")]
+    [Tooltip("\u9060\u7a0b\u706b\u7403\u547d\u4e2d\u73a9\u5bb6\u6216\u88ab\u73a9\u5bb6\u53cd\u64ca\u5f8c\u547d\u4e2d\u6575\u4eba\u6642\u9020\u6210\u7684\u50b7\u5bb3\u3002")]
     [SerializeField] private int projectileDamage = 1;
-    [Tooltip("遠程火球的飛行速度。")]
+    [Tooltip("\u9060\u7a0b\u706b\u7403\u7684\u98db\u884c\u901f\u5ea6\u3002")]
     [SerializeField] private float projectileSpeed = 5.5f;
-    [Tooltip("遠程火球存在幾秒後自動消失。")]
+    [Tooltip("\u9060\u7a0b\u706b\u7403\u5b58\u5728\u5e7e\u79d2\u5f8c\u81ea\u52d5\u6d88\u5931\u3002")]
     [SerializeField] private float projectileLifetime = 5f;
     [Tooltip("Sound played when this enemy projectile hits its target.")]
     [SerializeField] private AudioClip projectileHitSound;
     [Tooltip("Volume for the enemy projectile hit sound.")]
     [SerializeField, Range(0f, 1f)] private float projectileHitSoundVolume = 1f;
-    [Tooltip("沒有 Shoot 發射點時，火球會從敵人身上這個本地偏移位置發射。")]
+    [Tooltip("\u6c92\u6709 Shoot \u767c\u5c04\u9ede\u6642\uff0c\u706b\u7403\u6703\u5f9e\u6575\u4eba\u8eab\u4e0a\u9019\u500b\u672c\u5730\u504f\u79fb\u4f4d\u7f6e\u767c\u5c04\u3002")]
     [SerializeField] private Vector3 projectileLocalOffset = new Vector3(0.65f, 0.95f, 0f);
-    [Tooltip("遠程敵人返回出生點時的移動速度。")]
+    [Tooltip("\u9060\u7a0b\u6575\u4eba\u8fd4\u56de\u51fa\u751f\u9ede\u6642\u7684\u79fb\u52d5\u901f\u5ea6\u3002")]
     [SerializeField] private float returnSpeed = 1.8f;
 
-    [Header("Boss 攻擊")]
-    [Tooltip("Boss 遠程攻擊前會和玩家保持的水平距離。距離太近會後退，太遠會靠近。")]
+    [Header("Boss \u653b\u64ca")]
+    [Tooltip("Boss \u9060\u7a0b\u653b\u64ca\u524d\u6703\u548c\u73a9\u5bb6\u4fdd\u6301\u7684\u6c34\u5e73\u8ddd\u96e2\u3002\u8ddd\u96e2\u592a\u8fd1\u6703\u5f8c\u9000\uff0c\u592a\u9060\u6703\u9760\u8fd1\u3002")]
     [SerializeField] private float bossRangedDistance = 4.5f;
 
-    [Tooltip("Boss 遠程距離允許的誤差範圍。玩家距離落在 Boss Ranged Distance 正負這個值內才會遠攻。")]
+    [Tooltip("Boss \u9060\u7a0b\u8ddd\u96e2\u5141\u8a31\u7684\u8aa4\u5dee\u7bc4\u570d\u3002\u73a9\u5bb6\u8ddd\u96e2\u843d\u5728 Boss Ranged Distance \u6b63\u8ca0\u9019\u500b\u503c\u5167\u624d\u6703\u9060\u653b\u3002")]
     [SerializeField] private float bossRangedDistanceTolerance = 0.35f;
 
     [Header("Boss Contact Damage")]
@@ -258,58 +258,58 @@ public class EnemyPatrol3D : MonoBehaviour
         new BossProjectileType("IronBall", true, 4f)
     };
 
-    [Header("攻擊時間")]
-    [Tooltip("兩次攻擊之間的最短間隔秒數。")]
+    [Header("\u653b\u64ca\u6642\u9593")]
+    [Tooltip("\u5169\u6b21\u653b\u64ca\u4e4b\u9593\u7684\u6700\u77ed\u9593\u9694\u79d2\u6578\u3002")]
     [SerializeField] private float attackCooldown = 1.25f;
     [Tooltip("When enabled, projectile attacks use Ranged Attack Rhythm instead of the fixed Attack Cooldown.")]
     [SerializeField] private bool useRangedAttackRhythm;
     [Tooltip("Projectile attack intervals in seconds. Each value is used after one projectile attack, then the pattern loops.")]
     [SerializeField] private float[] rangedAttackRhythm = { 1.25f };
-    [Tooltip("開始攻擊後，延遲幾秒才真正造成傷害或射出火球。")]
+    [Tooltip("\u958b\u59cb\u653b\u64ca\u5f8c\uff0c\u5ef6\u9072\u5e7e\u79d2\u624d\u771f\u6b63\u9020\u6210\u50b7\u5bb3\u6216\u5c04\u51fa\u706b\u7403\u3002")]
     [SerializeField] private float attackWindup = 0.25f;
-    [Tooltip("攻擊動作期間敵人不能移動的秒數。")]
+    [Tooltip("\u653b\u64ca\u52d5\u4f5c\u671f\u9593\u6575\u4eba\u4e0d\u80fd\u79fb\u52d5\u7684\u79d2\u6578\u3002")]
     [SerializeField] private float attackLockSeconds = 0.55f;
 
-    [Header("死亡表演")]
-    [Tooltip("開啟後，敵人死亡時會被彈飛出畫面，而不是立刻消失。")]
+    [Header("\u6b7b\u4ea1\u8868\u6f14")]
+    [Tooltip("\u958b\u555f\u5f8c\uff0c\u6575\u4eba\u6b7b\u4ea1\u6642\u6703\u88ab\u5f48\u98db\u51fa\u756b\u9762\uff0c\u800c\u4e0d\u662f\u7acb\u523b\u6d88\u5931\u3002")]
     [SerializeField] private bool launchAwayOnDeath = true;
-    [Tooltip("敵人死亡彈飛的水平速度。")]
+    [Tooltip("\u6575\u4eba\u6b7b\u4ea1\u5f48\u98db\u7684\u6c34\u5e73\u901f\u5ea6\u3002")]
     [SerializeField] private float deathLaunchSpeed = 8f;
-    [Tooltip("敵人死亡彈飛的向上速度。")]
+    [Tooltip("\u6575\u4eba\u6b7b\u4ea1\u5f48\u98db\u7684\u5411\u4e0a\u901f\u5ea6\u3002")]
     [SerializeField] private float deathLaunchUpSpeed = 5f;
-    [Tooltip("敵人死亡彈飛時每秒旋轉的角度。")]
+    [Tooltip("\u6575\u4eba\u6b7b\u4ea1\u5f48\u98db\u6642\u6bcf\u79d2\u65cb\u8f49\u7684\u89d2\u5ea6\u3002")]
     [SerializeField] private float deathSpinDegreesPerSecond = 720f;
-    [Tooltip("敵人死亡後等待幾秒才隱藏，接著進入重生等待。")]
+    [Tooltip("\u6575\u4eba\u6b7b\u4ea1\u5f8c\u7b49\u5f85\u5e7e\u79d2\u624d\u96b1\u85cf\uff0c\u63a5\u8457\u9032\u5165\u91cd\u751f\u7b49\u5f85\u3002")]
     [SerializeField] private float deathDestroyDelay = 1.25f;
 
-    [Header("受傷擊退")]
-    [Tooltip("開啟後，敵人受到傷害時會往傷害來源的反方向彈開。")]
+    [Header("\u53d7\u50b7\u64ca\u9000")]
+    [Tooltip("\u958b\u555f\u5f8c\uff0c\u6575\u4eba\u53d7\u5230\u50b7\u5bb3\u6642\u6703\u5f80\u50b7\u5bb3\u4f86\u6e90\u7684\u53cd\u65b9\u5411\u5f48\u958b\u3002")]
     [SerializeField] private bool knockbackOnDamage = true;
 
-    [Tooltip("敵人受傷擊退力道。X 是水平彈開速度，Y 是向上彈起速度。")]
+    [Tooltip("\u6575\u4eba\u53d7\u50b7\u64ca\u9000\u529b\u9053\u3002X \u662f\u6c34\u5e73\u5f48\u958b\u901f\u5ea6\uff0cY \u662f\u5411\u4e0a\u5f48\u8d77\u901f\u5ea6\u3002")]
     [SerializeField] private Vector2 damageKnockbackForce = new Vector2(3.2f, 1.2f);
 
-    [Tooltip("受傷擊退後，敵人暫停巡邏/追擊控制的秒數。")]
+    [Tooltip("\u53d7\u50b7\u64ca\u9000\u5f8c\uff0c\u6575\u4eba\u66ab\u505c\u5de1\u908f/\u8ffd\u64ca\u63a7\u5236\u7684\u79d2\u6578\u3002")]
     [SerializeField] private float damageKnockbackLockSeconds = 0.18f;
 
-    [Tooltip("受擊動作在空中要暫停的時間點。0.5 代表 290~300 之間的 295。")]
+    [Tooltip("\u53d7\u64ca\u52d5\u4f5c\u5728\u7a7a\u4e2d\u8981\u66ab\u505c\u7684\u6642\u9593\u9ede\u30020.5 \u4ee3\u8868 290~300 \u4e4b\u9593\u7684 295\u3002")]
     [SerializeField] private float airborneHitPauseNormalizedTime = 0.5f;
 
-    [Tooltip("敵人受擊落地後，等待幾秒才恢復巡邏或追擊。")]
+    [Tooltip("\u6575\u4eba\u53d7\u64ca\u843d\u5730\u5f8c\uff0c\u7b49\u5f85\u5e7e\u79d2\u624d\u6062\u5fa9\u5de1\u908f\u6216\u8ffd\u64ca\u3002")]
     [SerializeField] private float damageLandingRecoverySeconds = 0.5f;
 
-    [Tooltip("判斷受擊後是否落地的額外距離。")]
+    [Tooltip("\u5224\u65b7\u53d7\u64ca\u5f8c\u662f\u5426\u843d\u5730\u7684\u984d\u5916\u8ddd\u96e2\u3002")]
     [SerializeField] private float damageGroundCheckDistance = 0.08f;
 
-    [Tooltip("受擊落地判斷使用的地面 Layer。留空時使用 Ground layer。")]
+    [Tooltip("\u53d7\u64ca\u843d\u5730\u5224\u65b7\u4f7f\u7528\u7684\u5730\u9762 Layer\u3002\u7559\u7a7a\u6642\u4f7f\u7528 Ground layer\u3002")]
     [SerializeField] private LayerMask damageGroundMask;
 
-    [Header("重生")]
-    [Tooltip("開啟後，敵人死亡且攝影機離開出生點一段時間後會重生。")]
+    [Header("\u91cd\u751f")]
+    [Tooltip("\u958b\u555f\u5f8c\uff0c\u6575\u4eba\u6b7b\u4ea1\u4e14\u651d\u5f71\u6a5f\u96e2\u958b\u51fa\u751f\u9ede\u4e00\u6bb5\u6642\u9593\u5f8c\u6703\u91cd\u751f\u3002")]
     [SerializeField] private bool respawnAfterCameraLeaves = true;
-    [Tooltip("攝影機離開敵人出生點後，要等待幾秒才重生。")]
+    [Tooltip("\u651d\u5f71\u6a5f\u96e2\u958b\u6575\u4eba\u51fa\u751f\u9ede\u5f8c\uff0c\u8981\u7b49\u5f85\u5e7e\u79d2\u624d\u91cd\u751f\u3002")]
     [SerializeField] private float respawnCameraAwaySeconds = 5f;
-    [Tooltip("判斷出生點是否離開攝影機畫面時，額外加上的畫面外緩衝。")]
+    [Tooltip("\u5224\u65b7\u51fa\u751f\u9ede\u662f\u5426\u96e2\u958b\u651d\u5f71\u6a5f\u756b\u9762\u6642\uff0c\u984d\u5916\u52a0\u4e0a\u7684\u756b\u9762\u5916\u7de9\u885d\u3002")]
     [SerializeField] private float respawnViewportPadding = 0.1f;
 
     private Rigidbody body;
@@ -654,21 +654,6 @@ public class EnemyPatrol3D : MonoBehaviour
 
         FaceTarget();
 
-        if (Time.time >= nextAttackTime && Time.time >= attackEndTime)
-        {
-            FaceTarget();
-            visualAnimator = visualAnimator != null ? visualAnimator : GetComponent<EnemyVisualAnimator>();
-            float animationLockSeconds = visualAnimator != null ? visualAnimator.PlayAttack() : 0f;
-            float lockSeconds = Mathf.Max(attackLockSeconds, animationLockSeconds);
-
-            currentAttackUsesRanged = ShouldUseRangedAttackNow();
-            attackResolved = false;
-            attackResolveTime = Time.time + attackWindup;
-            attackEndTime = Time.time + lockSeconds;
-            float cooldown = currentAttackUsesRanged ? GetNextRangedAttackInterval() : attackCooldown;
-            nextAttackTime = Time.time + Mathf.Max(cooldown, lockSeconds);
-        }
-
         if (!attackResolved && Time.time >= attackResolveTime)
         {
             if (currentAttackUsesRanged)
@@ -683,7 +668,60 @@ public class EnemyPatrol3D : MonoBehaviour
             attackResolved = true;
         }
 
+        if (Time.time >= nextAttackTime && Time.time >= attackEndTime)
+        {
+            FaceTarget();
+            visualAnimator = visualAnimator != null ? visualAnimator : GetComponent<EnemyVisualAnimator>();
+            currentAttackUsesRanged = ShouldUseRangedAttackNow();
+            float cooldown = currentAttackUsesRanged ? GetNextRangedAttackInterval() : attackCooldown;
+            float attackAnimationLength = visualAnimator != null ? visualAnimator.GetAttackAnimationLength() : 0f;
+            float attackSpeedMultiplier = GetAttackSpeedMultiplier(currentAttackUsesRanged, cooldown, attackAnimationLength);
+            float animationLockSeconds = GetScaledAttackTime(attackAnimationLength, attackSpeedMultiplier);
+            float windupSeconds = GetScaledAttackTime(attackWindup, attackSpeedMultiplier);
+            float lockSeconds = Mathf.Max(GetScaledAttackTime(attackLockSeconds, attackSpeedMultiplier), animationLockSeconds, windupSeconds);
+            if (visualAnimator != null)
+            {
+                visualAnimator.PlayAttack(attackSpeedMultiplier, lockSeconds);
+            }
+
+            attackResolved = false;
+            attackResolveTime = Time.time + windupSeconds;
+            attackEndTime = Time.time + lockSeconds;
+            nextAttackTime = Time.time + GetNextAttackInterval(currentAttackUsesRanged, cooldown, lockSeconds);
+        }
+
         StopMoving();
+    }
+
+    private float GetAttackSpeedMultiplier(bool isRangedAttack, float attackInterval, float attackAnimationLength)
+    {
+        if (!isRangedAttack || !useRangedAttackRhythm || attackInterval <= 0f)
+        {
+            return 1f;
+        }
+
+        float baseAttackCycle = Mathf.Max(attackCooldown, attackLockSeconds, attackWindup, attackAnimationLength);
+        if (baseAttackCycle <= 0f)
+        {
+            return 1f;
+        }
+
+        return Mathf.Max(1f, baseAttackCycle / Mathf.Max(0.01f, attackInterval));
+    }
+
+    private float GetScaledAttackTime(float seconds, float attackSpeedMultiplier)
+    {
+        return Mathf.Max(0f, seconds) / Mathf.Max(0.01f, attackSpeedMultiplier);
+    }
+
+    private float GetNextAttackInterval(bool isRangedAttack, float cooldown, float lockSeconds)
+    {
+        if (isRangedAttack && useRangedAttackRhythm)
+        {
+            return Mathf.Max(0.01f, cooldown);
+        }
+
+        return Mathf.Max(cooldown, lockSeconds);
     }
 
     private void ReturnHome()

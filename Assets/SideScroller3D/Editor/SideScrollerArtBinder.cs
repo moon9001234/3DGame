@@ -26,7 +26,7 @@ public static class SideScrollerArtBinder
     private const string EnemyPrefabPath = PrefabFolder + "/Enemy_Monster01.prefab";
     private const string RangedEnemyPrefabPath = PrefabFolder + "/Enemy_Monster03_Ranged.prefab";
 
-    [MenuItem("Tools/3D 遊戲工具/套用美術模型")]
+    [MenuItem("Tools/3D \u904a\u6232\u5de5\u5177/\u5957\u7528\u7f8e\u8853\u6a21\u578b")]
     public static void ApplyArtModels()
     {
         EnsureFolder("Assets/SideScroller3D");
@@ -127,7 +127,7 @@ public static class SideScrollerArtBinder
         Debug.Log("Applied TV_Man to Player, TV_Monster_01 to melee enemies, and TV_Monster_03 to ranged enemies in Prototype scene.");
     }
 
-    [MenuItem("Tools/3D 遊戲工具/從場景建立角色 Prefab")]
+    [MenuItem("Tools/3D \u904a\u6232\u5de5\u5177/\u5f9e\u5834\u666f\u5efa\u7acb\u89d2\u8272 Prefab")]
     public static void CreateCharacterPrefabsFromScene()
     {
         EnsureFolder("Assets/SideScroller3D");
@@ -211,7 +211,7 @@ public static class SideScrollerArtBinder
         Debug.Log($"Character prefabs saved:\n{PlayerVisualPrefabPath}\n{EnemyVisualPrefabPath}\n{RangedEnemyVisualPrefabPath}\n{PlayerPrefabPath}\n{EnemyPrefabPath}\n{RangedEnemyPrefabPath}");
     }
 
-    [MenuItem("Tools/3D 遊戲工具/在場景建立遠程敵人")]
+    [MenuItem("Tools/3D \u904a\u6232\u5de5\u5177/\u5728\u5834\u666f\u5efa\u7acb\u9060\u7a0b\u6575\u4eba")]
     public static void CreateRangedEnemyInScene()
     {
         EnsureFolder("Assets/SideScroller3D");

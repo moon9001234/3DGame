@@ -4,45 +4,45 @@ using UnityEngine.UI;
 // Manages the player's health UI and the basic control guide.
 public class SideScrollerHUD : MonoBehaviour
 {
-    [Header("生命值 UI")]
-    [Tooltip("要顯示生命值的玩家 Health。")]
+    [Header("\u751f\u547d\u503c UI")]
+    [Tooltip("\u8981\u986f\u793a\u751f\u547d\u503c\u7684\u73a9\u5bb6 Health\u3002")]
     [SerializeField] private Health playerHealth;
 
-    [Tooltip("玩家生命值滑桿。")]
+    [Tooltip("\u73a9\u5bb6\u751f\u547d\u503c\u6ed1\u687f\u3002")]
     [SerializeField] private Slider healthSlider;
 
-    [Header("操作說明")]
-    [Tooltip("是否在畫面右上角顯示操作說明。")]
+    [Header("\u64cd\u4f5c\u8aaa\u660e")]
+    [Tooltip("\u662f\u5426\u5728\u756b\u9762\u53f3\u4e0a\u89d2\u986f\u793a\u64cd\u4f5c\u8aaa\u660e\u3002")]
     [SerializeField] private bool showControlGuide = true;
 
-    [Tooltip("右上角操作說明文字。")]
+    [Tooltip("\u53f3\u4e0a\u89d2\u64cd\u4f5c\u8aaa\u660e\u6587\u5b57\u3002")]
     [TextArea(4, 8)]
     [SerializeField] private string controlGuide =
-        "操作說明\n" +
-        "A / D：左右移動\n" +
-        "Shift：衝刺\n" +
-        "Space：跳躍\n" +
-        "滑鼠左鍵 / J / Ctrl：攻擊\n" +
-        "攻擊石頭：反擊\n" +
-        "火球：無法反擊";
+        "\u64cd\u4f5c\u8aaa\u660e\n" +
+        "A / D\uff1a\u5de6\u53f3\u79fb\u52d5\n" +
+        "Shift\uff1a\u885d\u523a\n" +
+        "Space\uff1a\u8df3\u8e8d\n" +
+        "\u6ed1\u9f20\u5de6\u9375 / J / Ctrl\uff1a\u653b\u64ca\n" +
+        "\u653b\u64ca\u77f3\u982d\uff1a\u53cd\u64ca\n" +
+        "\u706b\u7403\uff1a\u7121\u6cd5\u53cd\u64ca";
 
-    [Tooltip("操作說明框距離畫面右上角的偏移。X 往左，Y 往下。")]
+    [Tooltip("\u64cd\u4f5c\u8aaa\u660e\u6846\u8ddd\u96e2\u756b\u9762\u53f3\u4e0a\u89d2\u7684\u504f\u79fb\u3002X \u5f80\u5de6\uff0cY \u5f80\u4e0b\u3002")]
     [SerializeField] private Vector2 guideOffset = new Vector2(-16f, -16f);
 
-    [Tooltip("操作說明框的大小。")]
+    [Tooltip("\u64cd\u4f5c\u8aaa\u660e\u6846\u7684\u5927\u5c0f\u3002")]
     [SerializeField] private Vector2 guideSize = new Vector2(230f, 170f);
 
-    [Tooltip("操作說明文字顏色。")]
+    [Tooltip("\u64cd\u4f5c\u8aaa\u660e\u6587\u5b57\u984f\u8272\u3002")]
     [SerializeField] private Color guideTextColor = new Color(1f, 1f, 1f, 1f);
 
-    [Tooltip("操作說明背景顏色。")]
+    [Tooltip("\u64cd\u4f5c\u8aaa\u660e\u80cc\u666f\u984f\u8272\u3002")]
     [SerializeField] private Color guideBackgroundColor = new Color(0f, 0f, 0f, 0.68f);
 
-    [Header("死亡提示")]
-    [Tooltip("玩家死亡時，畫面中央顯示的文字。")]
+    [Header("\u6b7b\u4ea1\u63d0\u793a")]
+    [Tooltip("\u73a9\u5bb6\u6b7b\u4ea1\u6642\uff0c\u756b\u9762\u4e2d\u592e\u986f\u793a\u7684\u6587\u5b57\u3002")]
     [SerializeField] private string gameOverMessage = "GAME OVER";
 
-    [Tooltip("死亡提示文字顏色。")]
+    [Tooltip("\u6b7b\u4ea1\u63d0\u793a\u6587\u5b57\u984f\u8272\u3002")]
     [SerializeField] private Color gameOverTextColor = new Color(1f, 0.08f, 0.04f, 1f);
 
     private const string ControlGuideName = "Controls Guide";

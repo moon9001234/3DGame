@@ -15,7 +15,7 @@ public static class SideScrollerBackgroundBuilder
     private const float LayerWidth = 120f;
     private const float LayerHeight = 14f;
 
-    [MenuItem("Tools/3D 遊戲工具/從 Art BG 建立視差背景")]
+    [MenuItem("Tools/3D \u904a\u6232\u5de5\u5177/\u5f9e Art BG \u5efa\u7acb\u8996\u5dee\u80cc\u666f")]
     public static void BuildParallaxBackground()
     {
         Scene scene = EditorSceneManager.GetActiveScene();
@@ -27,14 +27,14 @@ public static class SideScrollerBackgroundBuilder
         Camera camera = Camera.main != null ? Camera.main : Object.FindFirstObjectByType<Camera>();
         if (camera == null)
         {
-            Debug.LogError("找不到 Main Camera，無法建立視差背景。");
+            Debug.LogError("\u627e\u4e0d\u5230 Main Camera\uff0c\u7121\u6cd5\u5efa\u7acb\u8996\u5dee\u80cc\u666f\u3002");
             return;
         }
 
         List<BackgroundAsset> assets = LoadBackgroundAssets();
         if (assets.Count == 0)
         {
-            Debug.LogWarning($"在 {BgFolder} 找不到可用的背景圖片。");
+            Debug.LogWarning($"\u5728 {BgFolder} \u627e\u4e0d\u5230\u53ef\u7528\u7684\u80cc\u666f\u5716\u7247\u3002");
             return;
         }
 
@@ -56,7 +56,7 @@ public static class SideScrollerBackgroundBuilder
         EditorSceneManager.MarkSceneDirty(scene);
         EditorSceneManager.SaveScene(scene);
         AssetDatabase.SaveAssets();
-        Debug.Log("已從 Art/BG 建立 Parallax_Background：bd=前景、bs=中景、c=遠景、s/ss=固定底圖。");
+        Debug.Log("\u5df2\u5f9e Art/BG \u5efa\u7acb Parallax_Background\uff1abd=\u524d\u666f\u3001bs=\u4e2d\u666f\u3001c=\u9060\u666f\u3001s/ss=\u56fa\u5b9a\u5e95\u5716\u3002");
     }
 
     private static void CreateLayer(Transform root, Transform cameraTransform, string layerName, List<BackgroundAsset> allAssets, BackgroundGroup group, Vector2 factor, Vector3 position, int sortingBase)
@@ -89,7 +89,7 @@ public static class SideScrollerBackgroundBuilder
         Sprite sprite = AssetDatabase.LoadAssetAtPath<Sprite>(asset.Path);
         if (sprite == null)
         {
-            Debug.LogWarning($"無法載入背景 Sprite：{asset.Path}");
+            Debug.LogWarning($"\u7121\u6cd5\u8f09\u5165\u80cc\u666f Sprite\uff1a{asset.Path}");
             return;
         }
 

@@ -185,7 +185,7 @@ public class GameBalanceSettings3DEditor : Editor
         "projectileReflectEffectFallbackLifetime"
     };
 
-    [MenuItem("Tools/3D 遊戲工具/建立集中數值設定")]
+    [MenuItem("Tools/3D \u904a\u6232\u5de5\u5177/\u5efa\u7acb\u96c6\u4e2d\u6578\u503c\u8a2d\u5b9a")]
     private static void CreateOrSelectSettingsObject()
     {
         GameBalanceSettings3D existing = FindFirstSceneObject<GameBalanceSettings3D>(true);
@@ -224,13 +224,13 @@ public class GameBalanceSettings3DEditor : Editor
 
         EditorGUILayout.Space(6f);
         EditorGUILayout.HelpBox(
-            "敵人會依 Enemy_A / Enemy_B 這類名稱分組；武器會掃描 Player_Weapon 底下所有子層中帶有武器腳本的物件。同步前建議先讀取一次目前場景數值。",
+            "\u6575\u4eba\u6703\u4f9d Enemy_A / Enemy_B \u9019\u985e\u540d\u7a31\u5206\u7d44\uff1b\u6b66\u5668\u6703\u6383\u63cf Player_Weapon \u5e95\u4e0b\u6240\u6709\u5b50\u5c64\u4e2d\u5e36\u6709\u6b66\u5668\u8173\u672c\u7684\u7269\u4ef6\u3002\u540c\u6b65\u524d\u5efa\u8b70\u5148\u8b80\u53d6\u4e00\u6b21\u76ee\u524d\u5834\u666f\u6578\u503c\u3002",
             MessageType.Info);
     }
 
     private void DrawSyncToolsSection()
     {
-        if (!DrawFoldoutHeader("syncTools", "同步工具", true))
+        if (!DrawFoldoutHeader("syncTools", "\u540c\u6b65\u5de5\u5177", true))
         {
             return;
         }
@@ -244,12 +244,12 @@ public class GameBalanceSettings3DEditor : Editor
     {
         using (new EditorGUILayout.HorizontalScope())
         {
-            if (GUILayout.Button("從場景讀取目前數值", GUILayout.Height(30f)))
+            if (GUILayout.Button("\u5f9e\u5834\u666f\u8b80\u53d6\u76ee\u524d\u6578\u503c", GUILayout.Height(30f)))
             {
                 ReadFromScene((GameBalanceSettings3D)target);
             }
 
-            if (GUILayout.Button("同步到場景物件", GUILayout.Height(30f)))
+            if (GUILayout.Button("\u540c\u6b65\u5230\u5834\u666f\u7269\u4ef6", GUILayout.Height(30f)))
             {
                 SyncToScene((GameBalanceSettings3D)target);
             }
@@ -1143,24 +1143,24 @@ public class GameBalanceSettings3DEditor : Editor
 
     private void DrawGroupedLocalizedProperties()
     {
-        DrawSettingsSection("scan", "掃描設定", true,
+        DrawSettingsSection("scan", "\u6383\u63cf\u8a2d\u5b9a", true,
             "includeInactiveObjects",
             "enemyNameKeys",
             "playerWeaponRootName");
 
-        DrawSettingsSection("player", "玩家設定", true,
+        DrawSettingsSection("player", "\u73a9\u5bb6\u8a2d\u5b9a", true,
             "playerObjectName",
             "playerMotor",
             "playerCombat");
 
-        DrawSettingsSection("camera", "相機設定", false,
+        DrawSettingsSection("camera", "\u76f8\u6a5f\u8a2d\u5b9a", false,
             "cameraObjectName",
             "cameraShake");
 
-        DrawSettingsSection("enemies", "敵人設定", true,
+        DrawSettingsSection("enemies", "\u6575\u4eba\u8a2d\u5b9a", true,
             "enemies");
 
-        DrawSettingsSection("weapons", "武器設定", true,
+        DrawSettingsSection("weapons", "\u6b66\u5668\u8a2d\u5b9a", true,
             "weapons");
     }
 
@@ -1211,50 +1211,50 @@ public class GameBalanceSettings3DEditor : Editor
         key = NormalizeSectionKey(key);
         switch (key)
         {
-            case "syncTools": return "同步工具";
-            case "scan": return "掃描設定";
-            case "player": return "玩家設定";
-            case "camera": return "攝影機設定";
-            case "enemies": return "敵人設定";
-            case "weapons": return "武器設定";
-            case "playerMotor.movement": return "移動設定";
-            case "playerMotor.sideScroller": return "橫向卷軸限制";
-            case "playerMotor.jump": return "跳躍設定";
-            case "playerMotor.dash": return "衝刺設定";
-            case "playerMotor.dashAfterimage": return "衝刺殘影";
-            case "playerMotor.animation": return "動畫設定";
-            case "playerMotor.ground": return "地面偵測";
-            case "playerMotor.oneWayPlatform": return "單向跳板";
-            case "playerMotor.wall": return "牆面滑落";
-            case "playerMotor.damageKnockback": return "受傷彈飛";
-            case "playerCombat.combatIdle": return "戰鬥待機";
-            case "cameraShake.basic": return "攝影機震動";
-            case "enemy.type": return "敵人類型";
-            case "enemy.patrol": return "巡邏";
-            case "enemy.detection": return "偵測";
-            case "enemy.melee": return "近戰攻擊";
-            case "enemy.ranged": return "遠程攻擊";
-            case "enemy.bossContact": return "Boss 接觸傷害";
-            case "enemy.bossRanged": return "Boss 遠程攻擊";
-            case "enemy.attackTiming": return "攻擊時間";
-            case "enemy.hitEffect": return "受擊特效";
-            case "enemy.death": return "死亡";
-            case "enemy.damageKnockback": return "受傷擊退";
-            case "enemy.respawn": return "重生";
-            case "weapon.basic": return "武器資訊";
-            case "weapon.profile": return "攻擊設定";
-            case "weapon.hitbox": return "武器判定";
-            case "weaponProfile.behavior": return "攻擊行為";
-            case "weaponProfile.targets": return "目標";
-            case "weaponProfile.combo": return "連段攻擊";
-            case "weaponProfile.audio": return "命中音效";
-            case "weaponHitbox.basic": return "武器判定";
-            case "weaponHitbox.reflect": return "火球反擊";
+            case "syncTools": return "\u540c\u6b65\u5de5\u5177";
+            case "scan": return "\u6383\u63cf\u8a2d\u5b9a";
+            case "player": return "\u73a9\u5bb6\u8a2d\u5b9a";
+            case "camera": return "\u651d\u5f71\u6a5f\u8a2d\u5b9a";
+            case "enemies": return "\u6575\u4eba\u8a2d\u5b9a";
+            case "weapons": return "\u6b66\u5668\u8a2d\u5b9a";
+            case "playerMotor.movement": return "\u79fb\u52d5\u8a2d\u5b9a";
+            case "playerMotor.sideScroller": return "\u6a6b\u5411\u5377\u8ef8\u9650\u5236";
+            case "playerMotor.jump": return "\u8df3\u8e8d\u8a2d\u5b9a";
+            case "playerMotor.dash": return "\u885d\u523a\u8a2d\u5b9a";
+            case "playerMotor.dashAfterimage": return "\u885d\u523a\u6b98\u5f71";
+            case "playerMotor.animation": return "\u52d5\u756b\u8a2d\u5b9a";
+            case "playerMotor.ground": return "\u5730\u9762\u5075\u6e2c";
+            case "playerMotor.oneWayPlatform": return "\u55ae\u5411\u8df3\u677f";
+            case "playerMotor.wall": return "\u7246\u9762\u6ed1\u843d";
+            case "playerMotor.damageKnockback": return "\u53d7\u50b7\u5f48\u98db";
+            case "playerCombat.combatIdle": return "\u6230\u9b25\u5f85\u6a5f";
+            case "cameraShake.basic": return "\u651d\u5f71\u6a5f\u9707\u52d5";
+            case "enemy.type": return "\u6575\u4eba\u985e\u578b";
+            case "enemy.patrol": return "\u5de1\u908f";
+            case "enemy.detection": return "\u5075\u6e2c";
+            case "enemy.melee": return "\u8fd1\u6230\u653b\u64ca";
+            case "enemy.ranged": return "\u9060\u7a0b\u653b\u64ca";
+            case "enemy.bossContact": return "Boss \u63a5\u89f8\u50b7\u5bb3";
+            case "enemy.bossRanged": return "Boss \u9060\u7a0b\u653b\u64ca";
+            case "enemy.attackTiming": return "\u653b\u64ca\u6642\u9593";
+            case "enemy.hitEffect": return "\u53d7\u64ca\u7279\u6548";
+            case "enemy.death": return "\u6b7b\u4ea1";
+            case "enemy.damageKnockback": return "\u53d7\u50b7\u64ca\u9000";
+            case "enemy.respawn": return "\u91cd\u751f";
+            case "weapon.basic": return "\u6b66\u5668\u8cc7\u8a0a";
+            case "weapon.profile": return "\u653b\u64ca\u8a2d\u5b9a";
+            case "weapon.hitbox": return "\u6b66\u5668\u5224\u5b9a";
+            case "weaponProfile.behavior": return "\u653b\u64ca\u884c\u70ba";
+            case "weaponProfile.targets": return "\u76ee\u6a19";
+            case "weaponProfile.combo": return "\u9023\u6bb5\u653b\u64ca";
+            case "weaponProfile.audio": return "\u547d\u4e2d\u97f3\u6548";
+            case "weaponHitbox.basic": return "\u6b66\u5668\u5224\u5b9a";
+            case "weaponHitbox.reflect": return "\u706b\u7403\u53cd\u64ca";
         }
 
         if (!string.IsNullOrEmpty(key) && key.EndsWith(".other", StringComparison.Ordinal))
         {
-            return "其他";
+            return "\u5176\u4ed6";
         }
 
         return fallback;
@@ -1472,16 +1472,16 @@ public class GameBalanceSettings3DEditor : Editor
     {
         DrawGroupedGeneric(property, label, new[]
         {
-            new NestedSection("playerMotor.movement", "移動設定", true, new[] { "sync", "movementMode", "moveSpeed", "airControl", "useCameraRelativeMovement", "freeTurnSpeed" }),
-            new NestedSection("playerMotor.sideScroller", "橫向卷軸限制", false, new[] { "lockedZ", "movementAxis" }),
-            new NestedSection("playerMotor.jump", "跳躍設定", true, new[] { "jumpForce", "upwardGravityMultiplier", "fallGravityMultiplier", "maxFallSpeed", "jumpBufferSeconds", "coyoteTimeSeconds", "extraAirJumps", "airJumpForceMultiplier" }),
-            new NestedSection("playerMotor.dash", "衝刺設定", true, new[] { "dashDistance", "dashDuration", "dashCooldown", "allowAirDash", "flattenVerticalVelocityDuringDash", "dashJumpHorizontalMultiplier", "dashJumpDashSpeedCarryMultiplier", "dashJumpBoostSeconds", "airDashAnimationMinSeconds", "dashEndAnimationMinSeconds" }),
-            new NestedSection("playerMotor.dashAfterimage", "衝刺殘影", false, new[] { "enableDashAfterimage", "dashAfterimageSpawnInterval", "dashAfterimageLifetime", "dashAfterimageColor", "dashAfterimageIncludeMeshRenderers", "dashAfterimageIncludeInactiveRenderers" }),
-            new NestedSection("playerMotor.animation", "動畫設定", true, new[] { "actionAnimationCrossFadeSeconds", "jumpAnimationCrossFadeSeconds" }),
-            new NestedSection("playerMotor.ground", "地面偵測", false, new[] { "groundCheckLocalOffset", "groundCheckRadius", "groundMask", "groundFallbackDistance", "useAnySolidGroundFallback" }),
-            new NestedSection("playerMotor.oneWayPlatform", "單向跳板", false, new[] { "enableOneWayPlatforms", "dropThroughSeconds", "dropThroughStartSpeed", "dropThroughPlatformSearchDistance", "dropInputThreshold", "oneWayPlatformPrecheckHeight", "oneWayPlatformPrecheckPadding" }),
-            new NestedSection("playerMotor.wall", "牆面滑落", false, new[] { "preventAirWallSticking", "wallNormalThreshold", "wallContactGraceSeconds", "useNoFrictionColliderMaterial" }),
-            new NestedSection("playerMotor.damageKnockback", "受傷彈飛", false, new[] { "enableDamageKnockback", "knockbackForce", "knockbackControlLockSeconds", "lockControlUntilKnockbackLands" })
+            new NestedSection("playerMotor.movement", "\u79fb\u52d5\u8a2d\u5b9a", true, new[] { "sync", "movementMode", "moveSpeed", "airControl", "useCameraRelativeMovement", "freeTurnSpeed" }),
+            new NestedSection("playerMotor.sideScroller", "\u6a6b\u5411\u5377\u8ef8\u9650\u5236", false, new[] { "lockedZ", "movementAxis" }),
+            new NestedSection("playerMotor.jump", "\u8df3\u8e8d\u8a2d\u5b9a", true, new[] { "jumpForce", "upwardGravityMultiplier", "fallGravityMultiplier", "maxFallSpeed", "jumpBufferSeconds", "coyoteTimeSeconds", "extraAirJumps", "airJumpForceMultiplier" }),
+            new NestedSection("playerMotor.dash", "\u885d\u523a\u8a2d\u5b9a", true, new[] { "dashDistance", "dashDuration", "dashCooldown", "allowAirDash", "flattenVerticalVelocityDuringDash", "dashJumpHorizontalMultiplier", "dashJumpDashSpeedCarryMultiplier", "dashJumpBoostSeconds", "airDashAnimationMinSeconds", "dashEndAnimationMinSeconds" }),
+            new NestedSection("playerMotor.dashAfterimage", "\u885d\u523a\u6b98\u5f71", false, new[] { "enableDashAfterimage", "dashAfterimageSpawnInterval", "dashAfterimageLifetime", "dashAfterimageColor", "dashAfterimageIncludeMeshRenderers", "dashAfterimageIncludeInactiveRenderers" }),
+            new NestedSection("playerMotor.animation", "\u52d5\u756b\u8a2d\u5b9a", true, new[] { "actionAnimationCrossFadeSeconds", "jumpAnimationCrossFadeSeconds" }),
+            new NestedSection("playerMotor.ground", "\u5730\u9762\u5075\u6e2c", false, new[] { "groundCheckLocalOffset", "groundCheckRadius", "groundMask", "groundFallbackDistance", "useAnySolidGroundFallback" }),
+            new NestedSection("playerMotor.oneWayPlatform", "\u55ae\u5411\u8df3\u677f", false, new[] { "enableOneWayPlatforms", "dropThroughSeconds", "dropThroughStartSpeed", "dropThroughPlatformSearchDistance", "dropInputThreshold", "oneWayPlatformPrecheckHeight", "oneWayPlatformPrecheckPadding" }),
+            new NestedSection("playerMotor.wall", "\u7246\u9762\u6ed1\u843d", false, new[] { "preventAirWallSticking", "wallNormalThreshold", "wallContactGraceSeconds", "useNoFrictionColliderMaterial" }),
+            new NestedSection("playerMotor.damageKnockback", "\u53d7\u50b7\u5f48\u98db", false, new[] { "enableDamageKnockback", "knockbackForce", "knockbackControlLockSeconds", "lockControlUntilKnockbackLands" })
         });
     }
 
@@ -1505,18 +1505,18 @@ public class GameBalanceSettings3DEditor : Editor
     {
         DrawGroupedGeneric(property, label, new[]
         {
-            new NestedSection("enemy.type", "敵人類型", true, new[] { "sync", "enemyNameKey", "sceneObjectCount", "valuesDifferInScene", "attackMode" }),
-            new NestedSection("enemy.patrol", "巡邏", true, new[] { "movementMode", "useTransformRightAsMovementAxis", "movementAxis", "lockDepthToMovementPlane", "moveSpeed", "patrolMoveSpeed", "homeStopDistance", "fallbackPatrolHalfWidth", "patrolRadius", "patrolDestinationReachDistance", "patrolDestinationMinDistance", "patrolObstacleMask", "usePatrolObstacleMask", "patrolObstacleCheckDistance", "patrolObstacleRayHeights" }),
-            new NestedSection("enemy.detection", "偵測", true, new[] { "searchRange", "giveUpRange", "detectionBoxOffset", "detectionBoxHeight", "detectionBoxDepth", "giveUpBoxPadding", "showDetectionBoxGizmo", "onlyShowDetectionBoxWhenSelected" }),
-            new NestedSection("enemy.melee", "近戰攻擊", true, new[] { "attackRange", "meleeAttackHeight", "attackDamage", "meleeHitSoundVolume" }),
-            new NestedSection("enemy.ranged", "遠程攻擊", false, new[] { "projectileDamage", "projectileSpeed", "projectileLifetime", "projectileHitSoundVolume", "projectileLocalOffset", "returnSpeed" }),
-            new NestedSection("enemy.bossContact", "Boss 接觸傷害", false, new[] { "bossContactDamageEnabled", "bossContactDamage", "bossContactDamageCooldown", "bossContactDamageBoxSize", "bossContactDamageBoxCenter", "bossContactDamageTargetMask" }),
-            new NestedSection("enemy.bossRanged", "Boss 遠程攻擊", false, new[] { "bossRangedDistance", "bossRangedDistanceTolerance" }),
-            new NestedSection("enemy.attackTiming", "攻擊時機", false, new[] { "attackCooldown", "useRangedAttackRhythm", "rangedAttackRhythm", "attackWindup", "attackLockSeconds" }),
-            new NestedSection("enemy.hitEffect", "受擊特效", false, new[] { "hitEffect" }),
-            new NestedSection("enemy.death", "死亡", false, new[] { "launchAwayOnDeath", "deathLaunchSpeed", "deathLaunchUpSpeed", "deathSpinDegreesPerSecond", "deathDestroyDelay" }),
-            new NestedSection("enemy.damageKnockback", "受傷擊退", false, new[] { "knockbackOnDamage", "damageKnockbackForce", "damageKnockbackLockSeconds", "airborneHitPauseNormalizedTime", "damageLandingRecoverySeconds", "damageGroundCheckDistance", "damageGroundMask" }),
-            new NestedSection("enemy.respawn", "重生", false, new[] { "respawnAfterCameraLeaves", "respawnCameraAwaySeconds", "respawnViewportPadding" })
+            new NestedSection("enemy.type", "\u6575\u4eba\u985e\u578b", true, new[] { "sync", "enemyNameKey", "sceneObjectCount", "valuesDifferInScene", "attackMode" }),
+            new NestedSection("enemy.patrol", "\u5de1\u908f", true, new[] { "movementMode", "useTransformRightAsMovementAxis", "movementAxis", "lockDepthToMovementPlane", "moveSpeed", "patrolMoveSpeed", "homeStopDistance", "fallbackPatrolHalfWidth", "patrolRadius", "patrolDestinationReachDistance", "patrolDestinationMinDistance", "patrolObstacleMask", "usePatrolObstacleMask", "patrolObstacleCheckDistance", "patrolObstacleRayHeights" }),
+            new NestedSection("enemy.detection", "\u5075\u6e2c", true, new[] { "searchRange", "giveUpRange", "detectionBoxOffset", "detectionBoxHeight", "detectionBoxDepth", "giveUpBoxPadding", "showDetectionBoxGizmo", "onlyShowDetectionBoxWhenSelected" }),
+            new NestedSection("enemy.melee", "\u8fd1\u6230\u653b\u64ca", true, new[] { "attackRange", "meleeAttackHeight", "attackDamage", "meleeHitSoundVolume" }),
+            new NestedSection("enemy.ranged", "\u9060\u7a0b\u653b\u64ca", false, new[] { "projectileDamage", "projectileSpeed", "projectileLifetime", "projectileHitSoundVolume", "projectileLocalOffset", "returnSpeed" }),
+            new NestedSection("enemy.bossContact", "Boss \u63a5\u89f8\u50b7\u5bb3", false, new[] { "bossContactDamageEnabled", "bossContactDamage", "bossContactDamageCooldown", "bossContactDamageBoxSize", "bossContactDamageBoxCenter", "bossContactDamageTargetMask" }),
+            new NestedSection("enemy.bossRanged", "Boss \u9060\u7a0b\u653b\u64ca", false, new[] { "bossRangedDistance", "bossRangedDistanceTolerance" }),
+            new NestedSection("enemy.attackTiming", "\u653b\u64ca\u6642\u6a5f", false, new[] { "attackCooldown", "useRangedAttackRhythm", "rangedAttackRhythm", "attackWindup", "attackLockSeconds" }),
+            new NestedSection("enemy.hitEffect", "\u53d7\u64ca\u7279\u6548", false, new[] { "hitEffect" }),
+            new NestedSection("enemy.death", "\u6b7b\u4ea1", false, new[] { "launchAwayOnDeath", "deathLaunchSpeed", "deathLaunchUpSpeed", "deathSpinDegreesPerSecond", "deathDestroyDelay" }),
+            new NestedSection("enemy.damageKnockback", "\u53d7\u50b7\u64ca\u9000", false, new[] { "knockbackOnDamage", "damageKnockbackForce", "damageKnockbackLockSeconds", "airborneHitPauseNormalizedTime", "damageLandingRecoverySeconds", "damageGroundCheckDistance", "damageGroundMask" }),
+            new NestedSection("enemy.respawn", "\u91cd\u751f", false, new[] { "respawnAfterCameraLeaves", "respawnCameraAwaySeconds", "respawnViewportPadding" })
         });
     }
 
@@ -1524,7 +1524,7 @@ public class GameBalanceSettings3DEditor : Editor
     {
         DrawGroupedGeneric(property, label, new[]
         {
-            new NestedSection("enemy.hitEffect", "受擊特效", true, new[] { "sync", "effectPrefab", "effectAnchorName", "stopEffectOnAwake" })
+            new NestedSection("enemy.hitEffect", "\u53d7\u64ca\u7279\u6548", true, new[] { "sync", "effectPrefab", "effectAnchorName", "stopEffectOnAwake" })
         });
     }
 
@@ -1532,9 +1532,9 @@ public class GameBalanceSettings3DEditor : Editor
     {
         DrawGroupedGeneric(property, label, new[]
         {
-            new NestedSection("weapon.basic", "武器", true, new[] { "sync", "weaponNameKey", "sceneObjectCount", "valuesDifferInScene" }),
-            new NestedSection("weapon.profile", "攻擊設定", true, new[] { "attackProfile" }),
-            new NestedSection("weapon.hitbox", "武器判定", false, new[] { "hitbox" })
+            new NestedSection("weapon.basic", "\u6b66\u5668", true, new[] { "sync", "weaponNameKey", "sceneObjectCount", "valuesDifferInScene" }),
+            new NestedSection("weapon.profile", "\u653b\u64ca\u8a2d\u5b9a", true, new[] { "attackProfile" }),
+            new NestedSection("weapon.hitbox", "\u6b66\u5668\u5224\u5b9a", false, new[] { "hitbox" })
         });
     }
 
@@ -1542,10 +1542,10 @@ public class GameBalanceSettings3DEditor : Editor
     {
         DrawGroupedGeneric(property, label, new[]
         {
-            new NestedSection("weaponProfile.behavior", "攻擊行為", true, new[] { "sync", "attackCooldown", "attackMoveLockSeconds", "useAttackAnimationLength", "attackSpeedMultiplier", "attackCrossFadeSeconds", "allowAirAttacks" }),
-            new NestedSection("weaponProfile.targets", "目標", false, new[] { "targetMask" }),
-            new NestedSection("weaponProfile.combo", "連段攻擊", true, new[] { "attacks" }),
-            new NestedSection("weaponProfile.audio", "命中音效", false, new[] { "attackHitSound", "attackHitSoundVolume", "targetHitSounds" })
+            new NestedSection("weaponProfile.behavior", "\u653b\u64ca\u884c\u70ba", true, new[] { "sync", "attackCooldown", "attackMoveLockSeconds", "useAttackAnimationLength", "attackSpeedMultiplier", "attackCrossFadeSeconds", "allowAirAttacks" }),
+            new NestedSection("weaponProfile.targets", "\u76ee\u6a19", false, new[] { "targetMask" }),
+            new NestedSection("weaponProfile.combo", "\u9023\u6bb5\u653b\u64ca", true, new[] { "attacks" }),
+            new NestedSection("weaponProfile.audio", "\u547d\u4e2d\u97f3\u6548", false, new[] { "attackHitSound", "attackHitSoundVolume", "targetHitSounds" })
         });
     }
 
@@ -1553,8 +1553,8 @@ public class GameBalanceSettings3DEditor : Editor
     {
         DrawGroupedGeneric(property, label, new[]
         {
-            new NestedSection("weaponHitbox.basic", "武器判定", true, new[] { "sync", "weaponSize", "weaponColor", "weaponModelRoot", "useModelBoundsForHitbox", "updateColliderDuringPlay", "modelBoundsPadding" }),
-            new NestedSection("weaponHitbox.reflect", "投射物反彈", false, new[] { "projectileReflectExtraRange", "projectileReflectEffectPrefab", "projectileReflectEffectScale", "projectileReflectEffectFallbackLifetime" })
+            new NestedSection("weaponHitbox.basic", "\u6b66\u5668\u5224\u5b9a", true, new[] { "sync", "weaponSize", "weaponColor", "weaponModelRoot", "useModelBoundsForHitbox", "updateColliderDuringPlay", "modelBoundsPadding" }),
+            new NestedSection("weaponHitbox.reflect", "\u6295\u5c04\u7269\u53cd\u5f48", false, new[] { "projectileReflectExtraRange", "projectileReflectEffectPrefab", "projectileReflectEffectScale", "projectileReflectEffectFallbackLifetime" })
         });
     }
 
@@ -1630,7 +1630,7 @@ public class GameBalanceSettings3DEditor : Editor
 
             if (!drewHeader)
             {
-                if (!DrawFoldoutHeader(parent.propertyPath + ".other", "其他", false))
+                if (!DrawFoldoutHeader(parent.propertyPath + ".other", "\u5176\u4ed6", false))
                 {
                     return;
                 }
@@ -1665,7 +1665,7 @@ public class GameBalanceSettings3DEditor : Editor
         SerializedProperty size = property.FindPropertyRelative("Array.size");
         if (size != null)
         {
-            EditorGUILayout.PropertyField(size, new GUIContent("數量"));
+            EditorGUILayout.PropertyField(size, new GUIContent("\u6578\u91cf"));
         }
 
         for (int i = 0; i < property.arraySize; i++)
@@ -1684,32 +1684,32 @@ public class GameBalanceSettings3DEditor : Editor
 
     private GUIContent BuildArrayElementLabel(SerializedProperty arrayProperty, SerializedProperty element, int index)
     {
-        string text = "元素 " + index;
+        string text = "\u5143\u7d20 " + index;
         if (arrayProperty.name == "enemies")
         {
             SerializedProperty name = element.FindPropertyRelative("enemyNameKey");
             text = name != null && !string.IsNullOrWhiteSpace(name.stringValue)
                 ? name.stringValue
-                : "敵人 " + (index + 1);
+                : "\u6575\u4eba " + (index + 1);
         }
         else if (arrayProperty.name == "weapons")
         {
             SerializedProperty name = element.FindPropertyRelative("weaponNameKey");
             text = name != null && !string.IsNullOrWhiteSpace(name.stringValue)
                 ? name.stringValue
-                : "武器 " + (index + 1);
+                : "\u6b66\u5668 " + (index + 1);
         }
         else if (arrayProperty.name == "attacks")
         {
-            text = "攻擊 " + (index + 1);
+            text = "\u653b\u64ca " + (index + 1);
         }
         else if (arrayProperty.name == "targetHitSounds")
         {
-            text = "命中音效規則 " + (index + 1);
+            text = "\u547d\u4e2d\u97f3\u6548\u898f\u5247 " + (index + 1);
         }
         else if (arrayProperty.name == "enemyNameKeys")
         {
-            text = "敵人名稱 " + (index + 1);
+            text = "\u6575\u4eba\u540d\u7a31 " + (index + 1);
         }
 
         return new GUIContent(text);
@@ -1732,51 +1732,51 @@ public class GameBalanceSettings3DEditor : Editor
 
         switch (propertyName)
         {
-            case "includeInactiveObjects": return "讀取停用中的物件";
-            case "enemyNameKeys": return "敵人名稱清單";
-            case "playerWeaponRootName": return "武器根物件名稱";
-            case "playerObjectName": return "玩家物件名稱";
-            case "playerMotor": return "玩家移動數值";
-            case "playerCombat": return "玩家戰鬥數值";
-            case "cameraObjectName": return "攝影機物件名稱";
-            case "cameraShake": return "攝影機震動數值";
-            case "enemies": return "敵人數值";
-            case "weapons": return "武器數值";
-            case "sync": return "同步這組數值";
-            case "enemyNameKey": return "敵人名稱";
-            case "weaponNameKey": return "武器名稱";
-            case "sceneObjectCount": return "讀取到的數量";
-            case "valuesDifferInScene": return "場景中數值不一致";
-            case "attackProfile": return "攻擊設定";
-            case "hitbox": return "武器判定";
-            case "hitEffect": return "受擊特效";
-            case "attacks": return "攻擊段數設定";
-            case "animatorStateName": return "Animator 狀態名稱";
-            case "animationClip": return "攻擊動畫";
-            case "animationClipName": return "攻擊動畫名稱";
-            case "triggerName": return "連段觸發 Trigger";
-            case "nextInputWindowSeconds": return "下一段輸入時間窗";
-            case "nextAttackStartFrame": return "下一段切換幀";
-            case "attackEffectRoot": return "攻擊特效根物件";
+            case "includeInactiveObjects": return "\u8b80\u53d6\u505c\u7528\u4e2d\u7684\u7269\u4ef6";
+            case "enemyNameKeys": return "\u6575\u4eba\u540d\u7a31\u6e05\u55ae";
+            case "playerWeaponRootName": return "\u6b66\u5668\u6839\u7269\u4ef6\u540d\u7a31";
+            case "playerObjectName": return "\u73a9\u5bb6\u7269\u4ef6\u540d\u7a31";
+            case "playerMotor": return "\u73a9\u5bb6\u79fb\u52d5\u6578\u503c";
+            case "playerCombat": return "\u73a9\u5bb6\u6230\u9b25\u6578\u503c";
+            case "cameraObjectName": return "\u651d\u5f71\u6a5f\u7269\u4ef6\u540d\u7a31";
+            case "cameraShake": return "\u651d\u5f71\u6a5f\u9707\u52d5\u6578\u503c";
+            case "enemies": return "\u6575\u4eba\u6578\u503c";
+            case "weapons": return "\u6b66\u5668\u6578\u503c";
+            case "sync": return "\u540c\u6b65\u9019\u7d44\u6578\u503c";
+            case "enemyNameKey": return "\u6575\u4eba\u540d\u7a31";
+            case "weaponNameKey": return "\u6b66\u5668\u540d\u7a31";
+            case "sceneObjectCount": return "\u8b80\u53d6\u5230\u7684\u6578\u91cf";
+            case "valuesDifferInScene": return "\u5834\u666f\u4e2d\u6578\u503c\u4e0d\u4e00\u81f4";
+            case "attackProfile": return "\u653b\u64ca\u8a2d\u5b9a";
+            case "hitbox": return "\u6b66\u5668\u5224\u5b9a";
+            case "hitEffect": return "\u53d7\u64ca\u7279\u6548";
+            case "attacks": return "\u653b\u64ca\u6bb5\u6578\u8a2d\u5b9a";
+            case "animatorStateName": return "Animator \u72c0\u614b\u540d\u7a31";
+            case "animationClip": return "\u653b\u64ca\u52d5\u756b";
+            case "animationClipName": return "\u653b\u64ca\u52d5\u756b\u540d\u7a31";
+            case "triggerName": return "\u9023\u6bb5\u89f8\u767c Trigger";
+            case "nextInputWindowSeconds": return "\u4e0b\u4e00\u6bb5\u8f38\u5165\u6642\u9593\u7a97";
+            case "nextAttackStartFrame": return "\u4e0b\u4e00\u6bb5\u5207\u63db\u5e40";
+            case "attackEffectRoot": return "\u653b\u64ca\u7279\u6548\u6839\u7269\u4ef6";
             case "useRangedAttackRhythm": return "\u4f7f\u7528\u9060\u7a0b\u653b\u64ca\u7bc0\u594f";
             case "rangedAttackRhythm": return "\u9060\u7a0b\u653b\u64ca\u7bc0\u594f";
-            case "cameraShakeAmplitude": return "命中震動強度";
-            case "cameraShakeDuration": return "命中震動時間";
-            case "cameraShakeFrequency": return "命中震動頻率";
-            case "jumpAnimationCrossFadeSeconds": return "跳躍動畫淡入秒數";
-            case "attackMoveLockSeconds": return "攻擊移動鎖定秒數";
-            case "useAttackAnimationLength": return "使用攻擊動畫長度";
-            case "attackSpeedMultiplier": return "攻擊速度倍率";
-            case "attackCrossFadeSeconds": return "攻擊動畫淡入秒數";
-            case "allowAirAttacks": return "允許空中攻擊";
-            case "attackHitSound": return "預設命中音效";
-            case "attackHitSoundVolume": return "命中音效音量";
-            case "targetHitSounds": return "目標命中音效規則";
-            case "targetNameContains": return "目標名稱包含";
-            case "targetTag": return "目標 Tag";
-            case "targetLayers": return "目標圖層";
-            case "hitSound": return "命中音效";
-            case "volume": return "音量";
+            case "cameraShakeAmplitude": return "\u547d\u4e2d\u9707\u52d5\u5f37\u5ea6";
+            case "cameraShakeDuration": return "\u547d\u4e2d\u9707\u52d5\u6642\u9593";
+            case "cameraShakeFrequency": return "\u547d\u4e2d\u9707\u52d5\u983b\u7387";
+            case "jumpAnimationCrossFadeSeconds": return "\u8df3\u8e8d\u52d5\u756b\u6de1\u5165\u79d2\u6578";
+            case "attackMoveLockSeconds": return "\u653b\u64ca\u79fb\u52d5\u9396\u5b9a\u79d2\u6578";
+            case "useAttackAnimationLength": return "\u4f7f\u7528\u653b\u64ca\u52d5\u756b\u9577\u5ea6";
+            case "attackSpeedMultiplier": return "\u653b\u64ca\u901f\u5ea6\u500d\u7387";
+            case "attackCrossFadeSeconds": return "\u653b\u64ca\u52d5\u756b\u6de1\u5165\u79d2\u6578";
+            case "allowAirAttacks": return "\u5141\u8a31\u7a7a\u4e2d\u653b\u64ca";
+            case "attackHitSound": return "\u9810\u8a2d\u547d\u4e2d\u97f3\u6548";
+            case "attackHitSoundVolume": return "\u547d\u4e2d\u97f3\u6548\u97f3\u91cf";
+            case "targetHitSounds": return "\u76ee\u6a19\u547d\u4e2d\u97f3\u6548\u898f\u5247";
+            case "targetNameContains": return "\u76ee\u6a19\u540d\u7a31\u5305\u542b";
+            case "targetTag": return "\u76ee\u6a19 Tag";
+            case "targetLayers": return "\u76ee\u6a19\u5716\u5c64";
+            case "hitSound": return "\u547d\u4e2d\u97f3\u6548";
+            case "volume": return "\u97f3\u91cf";
             default: return ObjectNames.NicifyVariableName(propertyName);
         }
     }
@@ -1786,13 +1786,13 @@ public class GameBalanceSettings3DEditor : Editor
         switch (propertyName)
         {
             case "valuesDifferInScene":
-                return "同名敵人或同名武器在場景中的數值不完全相同。讀取時會先用第一個物件的數值。";
+                return "\u540c\u540d\u6575\u4eba\u6216\u540c\u540d\u6b66\u5668\u5728\u5834\u666f\u4e2d\u7684\u6578\u503c\u4e0d\u5b8c\u5168\u76f8\u540c\u3002\u8b80\u53d6\u6642\u6703\u5148\u7528\u7b2c\u4e00\u500b\u7269\u4ef6\u7684\u6578\u503c\u3002";
             case "sceneObjectCount":
-                return "目前場景中符合這個名稱分組的物件數量。";
+                return "\u76ee\u524d\u5834\u666f\u4e2d\u7b26\u5408\u9019\u500b\u540d\u7a31\u5206\u7d44\u7684\u7269\u4ef6\u6578\u91cf\u3002";
             case "includeInactiveObjects":
-                return "開啟後，停用中的敵人、武器、相機也會被讀取與同步。";
+                return "\u958b\u555f\u5f8c\uff0c\u505c\u7528\u4e2d\u7684\u6575\u4eba\u3001\u6b66\u5668\u3001\u76f8\u6a5f\u4e5f\u6703\u88ab\u8b80\u53d6\u8207\u540c\u6b65\u3002";
             case "playerWeaponRootName":
-                return "工具會尋找這個名稱的物件，並掃描它底下所有子層中的武器腳本。";
+                return "\u5de5\u5177\u6703\u5c0b\u627e\u9019\u500b\u540d\u7a31\u7684\u7269\u4ef6\uff0c\u4e26\u6383\u63cf\u5b83\u5e95\u4e0b\u6240\u6709\u5b50\u5c64\u4e2d\u7684\u6b66\u5668\u8173\u672c\u3002";
             default:
                 return string.Empty;
         }

@@ -17,47 +17,47 @@ public class GameBalanceSettings3D : MonoBehaviour
     }
 
     [Header("Scan")]
-    [InspectorName("讀取停用中的物件")]
+    [InspectorName("\u8b80\u53d6\u505c\u7528\u4e2d\u7684\u7269\u4ef6")]
     public bool includeInactiveObjects = true;
 
-    [InspectorName("敵人名稱")]
+    [InspectorName("\u6575\u4eba\u540d\u7a31")]
     public string[] enemyNameKeys = { "Enemy_A", "Enemy_B" };
 
-    [InspectorName("武器根物件名稱")]
+    [InspectorName("\u6b66\u5668\u6839\u7269\u4ef6\u540d\u7a31")]
     public string playerWeaponRootName = "Player_Weapon";
 
     [Header("Player")]
-    [InspectorName("玩家物件名稱")]
+    [InspectorName("\u73a9\u5bb6\u7269\u4ef6\u540d\u7a31")]
     public string playerObjectName;
 
-    [InspectorName("玩家移動數值")]
+    [InspectorName("\u73a9\u5bb6\u79fb\u52d5\u6578\u503c")]
     public PlayerMotorTuning playerMotor = new PlayerMotorTuning();
 
-    [InspectorName("玩家戰鬥數值")]
+    [InspectorName("\u73a9\u5bb6\u6230\u9b25\u6578\u503c")]
     public PlayerCombatTuning playerCombat = new PlayerCombatTuning();
 
     [Header("Camera")]
-    [InspectorName("攝影機物件名稱")]
+    [InspectorName("\u651d\u5f71\u6a5f\u7269\u4ef6\u540d\u7a31")]
     public string cameraObjectName;
 
-    [InspectorName("攝影機震動數值")]
+    [InspectorName("\u651d\u5f71\u6a5f\u9707\u52d5\u6578\u503c")]
     public CameraShakeTuning cameraShake = new CameraShakeTuning();
 
     [Header("Enemies")]
-    [InspectorName("敵人數值")]
+    [InspectorName("\u6575\u4eba\u6578\u503c")]
     public EnemyTuningEntry[] enemies = new EnemyTuningEntry[0];
 
     [Header("Weapons")]
-    [InspectorName("武器數值")]
+    [InspectorName("\u6b66\u5668\u6578\u503c")]
     public WeaponTuningEntry[] weapons = new WeaponTuningEntry[0];
 
     [Serializable]
     public class PlayerMotorTuning
     {
-        [InspectorName("同步這組數值")]
+        [InspectorName("\u540c\u6b65\u9019\u7d44\u6578\u503c")]
         public bool sync = true;
 
-        [InspectorName("移動模式")]
+        [InspectorName("\u79fb\u52d5\u6a21\u5f0f")]
         public BalanceMovementMode movementMode = BalanceMovementMode.Free3D;
         public float moveSpeed = 6f;
         public float airControl = 0.65f;
@@ -134,7 +134,7 @@ public class GameBalanceSettings3D : MonoBehaviour
     [Serializable]
     public class PlayerCombatTuning
     {
-        [InspectorName("同步這組數值")]
+        [InspectorName("\u540c\u6b65\u9019\u7d44\u6578\u503c")]
         public bool sync = true;
 
         public float combatDetectionRange = 5f;
@@ -145,7 +145,7 @@ public class GameBalanceSettings3D : MonoBehaviour
     [Serializable]
     public class CameraShakeTuning
     {
-        [InspectorName("同步這組數值")]
+        [InspectorName("\u540c\u6b65\u9019\u7d44\u6578\u503c")]
         public bool sync = true;
 
         public float defaultAmplitude = 0.08f;
@@ -157,16 +157,16 @@ public class GameBalanceSettings3D : MonoBehaviour
     [Serializable]
     public class EnemyTuningEntry
     {
-        [InspectorName("同步這組數值")]
+        [InspectorName("\u540c\u6b65\u9019\u7d44\u6578\u503c")]
         public bool sync = true;
 
-        [InspectorName("敵人名稱")]
+        [InspectorName("\u6575\u4eba\u540d\u7a31")]
         public string enemyNameKey;
 
-        [InspectorName("讀取到的數量")]
+        [InspectorName("\u8b80\u53d6\u5230\u7684\u6578\u91cf")]
         public int sceneObjectCount;
 
-        [InspectorName("場景中數值不一致")]
+        [InspectorName("\u5834\u666f\u4e2d\u6578\u503c\u4e0d\u4e00\u81f4")]
         public bool valuesDifferInScene;
 
         public BalanceAttackMode attackMode = BalanceAttackMode.Melee;
@@ -222,7 +222,7 @@ public class GameBalanceSettings3D : MonoBehaviour
         public float attackLockSeconds = 0.55f;
 
         [Header("Damage And Death")]
-        [InspectorName("受擊特效")]
+        [InspectorName("\u53d7\u64ca\u7279\u6548")]
         public EnemyHitEffectTuning hitEffect = new EnemyHitEffectTuning();
         public bool launchAwayOnDeath = true;
         public float deathLaunchSpeed = 8f;
@@ -246,7 +246,7 @@ public class GameBalanceSettings3D : MonoBehaviour
     [Serializable]
     public class EnemyHitEffectTuning
     {
-        [InspectorName("同步受擊特效")]
+        [InspectorName("\u540c\u6b65\u53d7\u64ca\u7279\u6548")]
         public bool sync = true;
 
         public GameObject effectPrefab;
@@ -257,29 +257,29 @@ public class GameBalanceSettings3D : MonoBehaviour
     [Serializable]
     public class WeaponTuningEntry
     {
-        [InspectorName("同步這把武器")]
+        [InspectorName("\u540c\u6b65\u9019\u628a\u6b66\u5668")]
         public bool sync = true;
 
-        [InspectorName("武器名稱")]
+        [InspectorName("\u6b66\u5668\u540d\u7a31")]
         public string weaponNameKey;
 
-        [InspectorName("讀取到的數量")]
+        [InspectorName("\u8b80\u53d6\u5230\u7684\u6578\u91cf")]
         public int sceneObjectCount;
 
-        [InspectorName("場景中數值不一致")]
+        [InspectorName("\u5834\u666f\u4e2d\u6578\u503c\u4e0d\u4e00\u81f4")]
         public bool valuesDifferInScene;
 
-        [InspectorName("攻擊設定")]
+        [InspectorName("\u653b\u64ca\u8a2d\u5b9a")]
         public WeaponProfileTuning attackProfile = new WeaponProfileTuning();
 
-        [InspectorName("武器判定")]
+        [InspectorName("\u6b66\u5668\u5224\u5b9a")]
         public WeaponHitboxTuning hitbox = new WeaponHitboxTuning();
     }
 
     [Serializable]
     public class WeaponProfileTuning
     {
-        [InspectorName("同步攻擊設定")]
+        [InspectorName("\u540c\u6b65\u653b\u64ca\u8a2d\u5b9a")]
         public bool sync = true;
 
         public float attackCooldown = 0.45f;
@@ -298,7 +298,7 @@ public class GameBalanceSettings3D : MonoBehaviour
     [Serializable]
     public class WeaponHitboxTuning
     {
-        [InspectorName("同步武器判定")]
+        [InspectorName("\u540c\u6b65\u6b66\u5668\u5224\u5b9a")]
         public bool sync = true;
 
         public Vector3 weaponSize = new Vector3(1.35f, 0.16f, 0.16f);

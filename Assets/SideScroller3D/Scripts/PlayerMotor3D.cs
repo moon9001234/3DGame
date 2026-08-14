@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System.Collections.Generic;
 using UnityEngine.Serialization;
 #if ENABLE_INPUT_SYSTEM
@@ -22,88 +22,88 @@ public class PlayerMotor3D : MonoBehaviour
         SideScroller
     }
 
-    [Header("移動設定")]
+    [Header("\u79fb\u52d5\u8a2d\u5b9a")]
     [SerializeField] private MovementMode movementMode = MovementMode.Free3D;
 
-    [Tooltip("角色水平移動速度。")]
+    [Tooltip("\u89d2\u8272\u6c34\u5e73\u79fb\u52d5\u901f\u5ea6\u3002")]
     [SerializeField] private float moveSpeed = 6f;
 
-    [Tooltip("空中可控制移動的比例。0 代表空中不能轉向，1 代表和地面一樣好控制。")]
+    [Tooltip("\u7a7a\u4e2d\u53ef\u63a7\u5236\u79fb\u52d5\u7684\u6bd4\u4f8b\u30020 \u4ee3\u8868\u7a7a\u4e2d\u4e0d\u80fd\u8f49\u5411\uff0c1 \u4ee3\u8868\u548c\u5730\u9762\u4e00\u6a23\u597d\u63a7\u5236\u3002")]
     [SerializeField] private float airControl = 0.65f;
 
-    [Tooltip("開啟後，WASD 會依照相機水平朝向移動。")]
+    [Tooltip("\u958b\u555f\u5f8c\uff0cWASD \u6703\u4f9d\u7167\u76f8\u6a5f\u6c34\u5e73\u671d\u5411\u79fb\u52d5\u3002")]
     [SerializeField] private bool useCameraRelativeMovement = true;
 
-    [Tooltip("指定用來計算移動方向的相機。留空時會使用 Main Camera。")]
+    [Tooltip("\u6307\u5b9a\u7528\u4f86\u8a08\u7b97\u79fb\u52d5\u65b9\u5411\u7684\u76f8\u6a5f\u3002\u7559\u7a7a\u6642\u6703\u4f7f\u7528 Main Camera\u3002")]
     [SerializeField] private Transform movementCamera;
 
-    [Tooltip("Free3D 模式下，角色轉向移動方向的速度。0 代表立即轉向。")]
+    [Tooltip("Free3D \u6a21\u5f0f\u4e0b\uff0c\u89d2\u8272\u8f49\u5411\u79fb\u52d5\u65b9\u5411\u7684\u901f\u5ea6\u30020 \u4ee3\u8868\u7acb\u5373\u8f49\u5411\u3002")]
     [SerializeField] private float freeTurnSpeed = 720f;
 
-    [Header("橫向卷軸限制")]
-    [Tooltip("只有 SideScroller 模式會使用，用來把角色鎖在固定深度平面。")]
+    [Header("\u6a6b\u5411\u5377\u8ef8\u9650\u5236")]
+    [Tooltip("\u53ea\u6709 SideScroller \u6a21\u5f0f\u6703\u4f7f\u7528\uff0c\u7528\u4f86\u628a\u89d2\u8272\u9396\u5728\u56fa\u5b9a\u6df1\u5ea6\u5e73\u9762\u3002")]
     [SerializeField] private float lockedZ = 0f;
 
-    [Tooltip("只有 SideScroller 模式會使用，用來指定舊橫向卷軸的移動軸。")]
+    [Tooltip("\u53ea\u6709 SideScroller \u6a21\u5f0f\u6703\u4f7f\u7528\uff0c\u7528\u4f86\u6307\u5b9a\u820a\u6a6b\u5411\u5377\u8ef8\u7684\u79fb\u52d5\u8ef8\u3002")]
     [SerializeField] private Vector3 movementAxis = Vector3.right;
 
-    [Header("跳躍設定")]
-    [Tooltip("角色跳躍初速度。數值越高跳得越高。")]
+    [Header("\u8df3\u8e8d\u8a2d\u5b9a")]
+    [Tooltip("\u89d2\u8272\u8df3\u8e8d\u521d\u901f\u5ea6\u3002\u6578\u503c\u8d8a\u9ad8\u8df3\u5f97\u8d8a\u9ad8\u3002")]
     [SerializeField] private float jumpForce = 8f;
 
-    [Tooltip("上升時額外重力倍率。數值越高，跳躍上升時間越短。")]
+    [Tooltip("\u4e0a\u5347\u6642\u984d\u5916\u91cd\u529b\u500d\u7387\u3002\u6578\u503c\u8d8a\u9ad8\uff0c\u8df3\u8e8d\u4e0a\u5347\u6642\u9593\u8d8a\u77ed\u3002")]
     [SerializeField] private float upwardGravityMultiplier = 1.2f;
 
-    [Tooltip("下落時額外重力倍率。數值越高，落下越快。")]
+    [Tooltip("\u4e0b\u843d\u6642\u984d\u5916\u91cd\u529b\u500d\u7387\u3002\u6578\u503c\u8d8a\u9ad8\uff0c\u843d\u4e0b\u8d8a\u5feb\u3002")]
     [SerializeField] private float fallGravityMultiplier = 2.6f;
 
-    [Tooltip("最大下落速度。避免角色下墜過快。")]
+    [Tooltip("\u6700\u5927\u4e0b\u843d\u901f\u5ea6\u3002\u907f\u514d\u89d2\u8272\u4e0b\u589c\u904e\u5feb\u3002")]
     [SerializeField] private float maxFallSpeed = 18f;
 
-    [Tooltip("提前按跳躍時的緩衝時間。")]
+    [Tooltip("\u63d0\u524d\u6309\u8df3\u8e8d\u6642\u7684\u7de9\u885d\u6642\u9593\u3002")]
     [SerializeField] private float jumpBufferSeconds = 0.12f;
 
-    [Tooltip("離開地面後仍允許跳躍的寬容時間。")]
+    [Tooltip("\u96e2\u958b\u5730\u9762\u5f8c\u4ecd\u5141\u8a31\u8df3\u8e8d\u7684\u5bec\u5bb9\u6642\u9593\u3002")]
     [SerializeField] private float coyoteTimeSeconds = 0.08f;
 
-    [Tooltip("離地後可額外跳躍的次數。1 代表可二段跳。")]
+    [Tooltip("\u96e2\u5730\u5f8c\u53ef\u984d\u5916\u8df3\u8e8d\u7684\u6b21\u6578\u30021 \u4ee3\u8868\u53ef\u4e8c\u6bb5\u8df3\u3002")]
     [SerializeField] private int extraAirJumps = 1;
 
-    [Tooltip("二段跳的垂直力道倍率。1 代表和普通跳一樣高。")]
+    [Tooltip("\u4e8c\u6bb5\u8df3\u7684\u5782\u76f4\u529b\u9053\u500d\u7387\u30021 \u4ee3\u8868\u548c\u666e\u901a\u8df3\u4e00\u6a23\u9ad8\u3002")]
     [SerializeField] private float airJumpForceMultiplier = 1f;
 
-    [Header("衝刺設定")]
-    [Tooltip("按下衝刺鍵時，角色往面向方向快速位移的距離。")]
+    [Header("\u885d\u523a\u8a2d\u5b9a")]
+    [Tooltip("\u6309\u4e0b\u885d\u523a\u9375\u6642\uff0c\u89d2\u8272\u5f80\u9762\u5411\u65b9\u5411\u5feb\u901f\u4f4d\u79fb\u7684\u8ddd\u96e2\u3002")]
     [SerializeField] private float dashDistance = 4f;
 
-    [Tooltip("衝刺位移完成所需時間。數值越小，衝刺越瞬間。")]
+    [Tooltip("\u885d\u523a\u4f4d\u79fb\u5b8c\u6210\u6240\u9700\u6642\u9593\u3002\u6578\u503c\u8d8a\u5c0f\uff0c\u885d\u523a\u8d8a\u77ac\u9593\u3002")]
     [SerializeField] private float dashDuration = 0.12f;
 
-    [Tooltip("兩次衝刺之間的冷卻時間。")]
+    [Tooltip("\u5169\u6b21\u885d\u523a\u4e4b\u9593\u7684\u51b7\u537b\u6642\u9593\u3002")]
     [SerializeField] private float dashCooldown = 0.45f;
 
-    [Tooltip("開啟後，角色在空中也可以衝刺。")]
+    [Tooltip("\u958b\u555f\u5f8c\uff0c\u89d2\u8272\u5728\u7a7a\u4e2d\u4e5f\u53ef\u4ee5\u885d\u523a\u3002")]
     [SerializeField] private bool allowAirDash = true;
 
-    [Tooltip("開啟後，衝刺期間會暫停垂直速度，讓角色筆直往前衝。")]
+    [Tooltip("\u958b\u555f\u5f8c\uff0c\u885d\u523a\u671f\u9593\u6703\u66ab\u505c\u5782\u76f4\u901f\u5ea6\uff0c\u8b93\u89d2\u8272\u7b46\u76f4\u5f80\u524d\u885d\u3002")]
     [SerializeField] private bool flattenVerticalVelocityDuringDash = true;
 
-    [Tooltip("衝刺中起跳時，水平跳躍距離的速度倍率。")]
+    [Tooltip("\u885d\u523a\u4e2d\u8d77\u8df3\u6642\uff0c\u6c34\u5e73\u8df3\u8e8d\u8ddd\u96e2\u7684\u901f\u5ea6\u500d\u7387\u3002")]
     [SerializeField] private float dashJumpHorizontalMultiplier = 1.8f;
 
-    [Tooltip("衝刺中起跳時，至少保留多少比例的衝刺速度作為助跑動量。")]
+    [Tooltip("\u885d\u523a\u4e2d\u8d77\u8df3\u6642\uff0c\u81f3\u5c11\u4fdd\u7559\u591a\u5c11\u6bd4\u4f8b\u7684\u885d\u523a\u901f\u5ea6\u4f5c\u70ba\u52a9\u8dd1\u52d5\u91cf\u3002")]
     [SerializeField] private float dashJumpDashSpeedCarryMultiplier = 0.85f;
 
-    [Tooltip("衝刺跳躍後，保留向前動量的時間。")]
+    [Tooltip("\u885d\u523a\u8df3\u8e8d\u5f8c\uff0c\u4fdd\u7559\u5411\u524d\u52d5\u91cf\u7684\u6642\u9593\u3002")]
     [SerializeField] private float dashJumpBoostSeconds = 0.35f;
 
-    [Tooltip("空中衝刺時，Dash 動作至少保留的時間，避免 dash 位移太短時立刻被 Jump_Down 蓋掉。")]
+    [Tooltip("\u7a7a\u4e2d\u885d\u523a\u6642\uff0cDash \u52d5\u4f5c\u81f3\u5c11\u4fdd\u7559\u7684\u6642\u9593\uff0c\u907f\u514d dash \u4f4d\u79fb\u592a\u77ed\u6642\u7acb\u523b\u88ab Jump_Down \u84cb\u6389\u3002")]
     [SerializeField] private float airDashAnimationMinSeconds = 0.18f;
 
-    [Tooltip("Dash_End 至少保留的時間，避免衝刺結束動作太快被其他狀態蓋掉。")]
+    [Tooltip("Dash_End \u81f3\u5c11\u4fdd\u7559\u7684\u6642\u9593\uff0c\u907f\u514d\u885d\u523a\u7d50\u675f\u52d5\u4f5c\u592a\u5feb\u88ab\u5176\u4ed6\u72c0\u614b\u84cb\u6389\u3002")]
     [SerializeField] private float dashEndAnimationMinSeconds = 0.12f;
 
-    [Header("衝刺殘影")]
+    [Header("\u885d\u523a\u6b98\u5f71")]
     [SerializeField] private bool enableDashAfterimage = true;
     [SerializeField] private Transform dashAfterimageVisualRoot;
     [SerializeField] private float dashAfterimageSpawnInterval = 0.035f;
@@ -112,79 +112,79 @@ public class PlayerMotor3D : MonoBehaviour
     [SerializeField] private bool dashAfterimageIncludeMeshRenderers = true;
     [SerializeField] private bool dashAfterimageIncludeInactiveRenderers;
 
-    [Header("動畫設定")]
-    [Tooltip("腳本切換 Dash、Dash_End、Death 等動作 state 時的淡入時間。跳躍動作使用下方獨立設定。")]
+    [Header("\u52d5\u756b\u8a2d\u5b9a")]
+    [Tooltip("\u8173\u672c\u5207\u63db Dash\u3001Dash_End\u3001Death \u7b49\u52d5\u4f5c state \u6642\u7684\u6de1\u5165\u6642\u9593\u3002\u8df3\u8e8d\u52d5\u4f5c\u4f7f\u7528\u4e0b\u65b9\u7368\u7acb\u8a2d\u5b9a\u3002")]
     [SerializeField] private float actionAnimationCrossFadeSeconds = 0.04f;
 
-    [Tooltip("Jump_Up 和 Jump_Down 之間的淡入時間。數值越大，跳躍上升切到下落越柔和。")]
+    [Tooltip("Jump_Up \u548c Jump_Down \u4e4b\u9593\u7684\u6de1\u5165\u6642\u9593\u3002\u6578\u503c\u8d8a\u5927\uff0c\u8df3\u8e8d\u4e0a\u5347\u5207\u5230\u4e0b\u843d\u8d8a\u67d4\u548c\u3002")]
     [SerializeField] private float jumpAnimationCrossFadeSeconds = 0.12f;
 
-    [Header("地面偵測")]
-    [Tooltip("用來判斷角色是否站在地面的定位點。")]
+    [Header("\u5730\u9762\u5075\u6e2c")]
+    [Tooltip("\u7528\u4f86\u5224\u65b7\u89d2\u8272\u662f\u5426\u7ad9\u5728\u5730\u9762\u7684\u5b9a\u4f4d\u9ede\u3002")]
     [SerializeField] private Transform groundCheck;
 
-    [Tooltip("沒有指定 Ground Check 時，自動建立的本地偏移位置。")]
+    [Tooltip("\u6c92\u6709\u6307\u5b9a Ground Check \u6642\uff0c\u81ea\u52d5\u5efa\u7acb\u7684\u672c\u5730\u504f\u79fb\u4f4d\u7f6e\u3002")]
     [SerializeField] private Vector3 groundCheckLocalOffset = new Vector3(0f, -1.05f, 0f);
 
-    [Tooltip("地面偵測球體半徑。")]
+    [Tooltip("\u5730\u9762\u5075\u6e2c\u7403\u9ad4\u534a\u5f91\u3002")]
     [SerializeField] private float groundCheckRadius = 0.2f;
 
-    [Tooltip("哪些 Layer 會被視為地面。")]
+    [Tooltip("\u54ea\u4e9b Layer \u6703\u88ab\u8996\u70ba\u5730\u9762\u3002")]
     [SerializeField] private LayerMask groundMask;
 
-    [Tooltip("備用地面偵測距離，用來降低落地判斷失效的機率。")]
+    [Tooltip("\u5099\u7528\u5730\u9762\u5075\u6e2c\u8ddd\u96e2\uff0c\u7528\u4f86\u964d\u4f4e\u843d\u5730\u5224\u65b7\u5931\u6548\u7684\u6a5f\u7387\u3002")]
     [SerializeField] private float groundFallbackDistance = 0.35f;
 
-    [Tooltip("開啟後，沒有設定 Ground Layer 時會用任何可站立實體作為備用地面。")]
+    [Tooltip("\u958b\u555f\u5f8c\uff0c\u6c92\u6709\u8a2d\u5b9a Ground Layer \u6642\u6703\u7528\u4efb\u4f55\u53ef\u7ad9\u7acb\u5be6\u9ad4\u4f5c\u70ba\u5099\u7528\u5730\u9762\u3002")]
     [SerializeField] private bool useAnySolidGroundFallback = true;
 
-    [Header("單向跳板")]
-    [Tooltip("開啟後，可由下往上穿越 OneWayPlatform3D，站上去後按下加跳躍可往下穿越。")]
+    [Header("\u55ae\u5411\u8df3\u677f")]
+    [Tooltip("\u958b\u555f\u5f8c\uff0c\u53ef\u7531\u4e0b\u5f80\u4e0a\u7a7f\u8d8a OneWayPlatform3D\uff0c\u7ad9\u4e0a\u53bb\u5f8c\u6309\u4e0b\u52a0\u8df3\u8e8d\u53ef\u5f80\u4e0b\u7a7f\u8d8a\u3002")]
     [SerializeField] private bool enableOneWayPlatforms = true;
 
-    [Tooltip("下跳時，暫時忽略單向跳板碰撞的時間。")]
+    [Tooltip("\u4e0b\u8df3\u6642\uff0c\u66ab\u6642\u5ffd\u7565\u55ae\u5411\u8df3\u677f\u78b0\u649e\u7684\u6642\u9593\u3002")]
     [SerializeField] private float dropThroughSeconds = 0.45f;
 
-    [Tooltip("下跳時給角色的起始下落速度，讓角色更快離開跳板碰撞範圍。")]
+    [Tooltip("\u4e0b\u8df3\u6642\u7d66\u89d2\u8272\u7684\u8d77\u59cb\u4e0b\u843d\u901f\u5ea6\uff0c\u8b93\u89d2\u8272\u66f4\u5feb\u96e2\u958b\u8df3\u677f\u78b0\u649e\u7bc4\u570d\u3002")]
     [SerializeField] private float dropThroughStartSpeed = 1.2f;
 
-    [Tooltip("沒有記錄目前跳板時，只會搜尋腳下這段距離內的單向跳板，避免誤忽略下層跳板。")]
+    [Tooltip("\u6c92\u6709\u8a18\u9304\u76ee\u524d\u8df3\u677f\u6642\uff0c\u53ea\u6703\u641c\u5c0b\u8173\u4e0b\u9019\u6bb5\u8ddd\u96e2\u5167\u7684\u55ae\u5411\u8df3\u677f\uff0c\u907f\u514d\u8aa4\u5ffd\u7565\u4e0b\u5c64\u8df3\u677f\u3002")]
     [SerializeField] private float dropThroughPlatformSearchDistance = 0.18f;
 
-    [Tooltip("手把或鍵盤垂直軸低於這個值時，會視為按住下方向。")]
+    [Tooltip("\u624b\u628a\u6216\u9375\u76e4\u5782\u76f4\u8ef8\u4f4e\u65bc\u9019\u500b\u503c\u6642\uff0c\u6703\u8996\u70ba\u6309\u4f4f\u4e0b\u65b9\u5411\u3002")]
     [SerializeField] private float dropInputThreshold = 0.45f;
 
-    [Tooltip("往上穿越跳板時，玩家周圍提前偵測單向跳板的高度。")]
+    [Tooltip("\u5f80\u4e0a\u7a7f\u8d8a\u8df3\u677f\u6642\uff0c\u73a9\u5bb6\u5468\u570d\u63d0\u524d\u5075\u6e2c\u55ae\u5411\u8df3\u677f\u7684\u9ad8\u5ea6\u3002")]
     [SerializeField] private float oneWayPlatformPrecheckHeight = 1.6f;
 
-    [Tooltip("往上穿越跳板時，玩家周圍提前偵測單向跳板的水平外擴範圍。")]
+    [Tooltip("\u5f80\u4e0a\u7a7f\u8d8a\u8df3\u677f\u6642\uff0c\u73a9\u5bb6\u5468\u570d\u63d0\u524d\u5075\u6e2c\u55ae\u5411\u8df3\u677f\u7684\u6c34\u5e73\u5916\u64f4\u7bc4\u570d\u3002")]
     [SerializeField] private float oneWayPlatformPrecheckPadding = 0.12f;
 
-    [Header("牆面滑落")]
-    [Tooltip("開啟後，角色空中貼到牆時會停止持續往牆內推，避免卡在牆上。")]
+    [Header("\u7246\u9762\u6ed1\u843d")]
+    [Tooltip("\u958b\u555f\u5f8c\uff0c\u89d2\u8272\u7a7a\u4e2d\u8cbc\u5230\u7246\u6642\u6703\u505c\u6b62\u6301\u7e8c\u5f80\u7246\u5167\u63a8\uff0c\u907f\u514d\u5361\u5728\u7246\u4e0a\u3002")]
     [SerializeField] private bool preventAirWallSticking = true;
 
-    [Tooltip("側面碰撞法線大於這個數值時，會被視為牆面。")]
+    [Tooltip("\u5074\u9762\u78b0\u649e\u6cd5\u7dda\u5927\u65bc\u9019\u500b\u6578\u503c\u6642\uff0c\u6703\u88ab\u8996\u70ba\u7246\u9762\u3002")]
     [SerializeField] private float wallNormalThreshold = 0.55f;
 
-    [Tooltip("離開牆面後，牆面阻擋狀態保留的短暫時間。")]
+    [Tooltip("\u96e2\u958b\u7246\u9762\u5f8c\uff0c\u7246\u9762\u963b\u64cb\u72c0\u614b\u4fdd\u7559\u7684\u77ed\u66ab\u6642\u9593\u3002")]
     [SerializeField] private float wallContactGraceSeconds = 0.08f;
 
-    [Tooltip("開啟後，會自動讓角色主 Collider 使用無摩擦材質，減少貼牆卡住。")]
+    [Tooltip("\u958b\u555f\u5f8c\uff0c\u6703\u81ea\u52d5\u8b93\u89d2\u8272\u4e3b Collider \u4f7f\u7528\u7121\u6469\u64e6\u6750\u8cea\uff0c\u6e1b\u5c11\u8cbc\u7246\u5361\u4f4f\u3002")]
     [SerializeField] private bool useNoFrictionColliderMaterial = true;
 
-    [Header("受傷彈飛")]
-    [Tooltip("開啟後，玩家受傷時會被彈飛並短暫鎖定操作。關閉後只播放受傷閃爍，不改變移動速度。")]
+    [Header("\u53d7\u50b7\u5f48\u98db")]
+    [Tooltip("\u958b\u555f\u5f8c\uff0c\u73a9\u5bb6\u53d7\u50b7\u6642\u6703\u88ab\u5f48\u98db\u4e26\u77ed\u66ab\u9396\u5b9a\u64cd\u4f5c\u3002\u95dc\u9589\u5f8c\u53ea\u64ad\u653e\u53d7\u50b7\u9583\u720d\uff0c\u4e0d\u6539\u8b8a\u79fb\u52d5\u901f\u5ea6\u3002")]
     [SerializeField] private bool enableDamageKnockback = true;
 
-    [Tooltip("玩家碰到敵人時的彈飛力道。X 是水平彈開速度，Y 是往上彈起速度。")]
+    [Tooltip("\u73a9\u5bb6\u78b0\u5230\u6575\u4eba\u6642\u7684\u5f48\u98db\u529b\u9053\u3002X \u662f\u6c34\u5e73\u5f48\u958b\u901f\u5ea6\uff0cY \u662f\u5f80\u4e0a\u5f48\u8d77\u901f\u5ea6\u3002")]
     [FormerlySerializedAs("knockback")]
     [SerializeField] private Vector2 knockbackForce = new Vector2(8f, 4f);
 
-    [Tooltip("彈飛後玩家不能操作角色的最短時間。")]
+    [Tooltip("\u5f48\u98db\u5f8c\u73a9\u5bb6\u4e0d\u80fd\u64cd\u4f5c\u89d2\u8272\u7684\u6700\u77ed\u6642\u9593\u3002")]
     [SerializeField] private float knockbackControlLockSeconds = 0.45f;
 
-    [Tooltip("開啟後，如果玩家還在空中，會持續鎖住操作直到落地。")]
+    [Tooltip("\u958b\u555f\u5f8c\uff0c\u5982\u679c\u73a9\u5bb6\u9084\u5728\u7a7a\u4e2d\uff0c\u6703\u6301\u7e8c\u9396\u4f4f\u64cd\u4f5c\u76f4\u5230\u843d\u5730\u3002")]
     [SerializeField] private bool lockControlUntilKnockbackLands = true;
 
     private Rigidbody body;

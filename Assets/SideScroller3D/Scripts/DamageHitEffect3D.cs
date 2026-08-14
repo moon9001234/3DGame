@@ -3,14 +3,14 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public class DamageHitEffect3D : MonoBehaviour
 {
-    [Header("受擊特效")]
-    [Tooltip("受到傷害時播放的特效 Prefab，例如 FX_Hit。沒有指定時不播放特效。")]
+    [Header("\u53d7\u64ca\u7279\u6548")]
+    [Tooltip("\u53d7\u5230\u50b7\u5bb3\u6642\u64ad\u653e\u7684\u7279\u6548 Prefab\uff0c\u4f8b\u5982 FX_Hit\u3002\u6c92\u6709\u6307\u5b9a\u6642\u4e0d\u64ad\u653e\u7279\u6548\u3002")]
     [SerializeField] private GameObject effectPrefab;
 
-    [Tooltip("特效生成與播放的位置，例如 Enemy_Model 底下的 EF_Hit。")]
+    [Tooltip("\u7279\u6548\u751f\u6210\u8207\u64ad\u653e\u7684\u4f4d\u7f6e\uff0c\u4f8b\u5982 Enemy_Model \u5e95\u4e0b\u7684 EF_Hit\u3002")]
     [SerializeField] private Transform effectAnchor;
 
-    [Tooltip("沒有手動指定 Effect Anchor 時，會用這個名稱在子物件中尋找定位點。")]
+    [Tooltip("\u6c92\u6709\u624b\u52d5\u6307\u5b9a Effect Anchor \u6642\uff0c\u6703\u7528\u9019\u500b\u540d\u7a31\u5728\u5b50\u7269\u4ef6\u4e2d\u5c0b\u627e\u5b9a\u4f4d\u9ede\u3002")]
     [SerializeField] private string effectAnchorName = "EF_Hit";
 
     [Tooltip("Stop and hide the effect at startup so Play On Awake particles do not appear when the scene starts.")]

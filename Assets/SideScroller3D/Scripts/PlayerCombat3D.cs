@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using CartoonFX;
 using System.Collections.Generic;
 #if ENABLE_INPUT_SYSTEM

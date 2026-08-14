@@ -7,7 +7,7 @@ public static class OneWayPlatformInstaller
 {
     private const string ScenePath = "Assets/SideScroller3D/Scenes/Prototype.unity";
 
-    [MenuItem("Tools/3D 遊戲工具/套用單向平台")]
+    [MenuItem("Tools/3D \u904a\u6232\u5de5\u5177/\u5957\u7528\u55ae\u5411\u5e73\u53f0")]
     public static void Apply()
     {
         Scene scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);

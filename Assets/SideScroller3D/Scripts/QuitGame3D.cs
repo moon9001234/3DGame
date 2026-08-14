@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 #endif
 
-// 讓玩家在可執行版中按 Esc 隨時關閉遊戲。
+// \u8b93\u73a9\u5bb6\u5728\u53ef\u57f7\u884c\u7248\u4e2d\u6309 Esc \u96a8\u6642\u95dc\u9589\u904a\u6232\u3002
 public class QuitGame3D : MonoBehaviour
 {
     private const string RuntimeObjectName = "QuitGame3D";

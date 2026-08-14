@@ -1,41 +1,41 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// 玩家武器的實際攻擊判定。攻擊期間會掃描判定盒，傷害敵人或反彈可反彈投射物。
+// \u73a9\u5bb6\u6b66\u5668\u7684\u5be6\u969b\u653b\u64ca\u5224\u5b9a\u3002\u653b\u64ca\u671f\u9593\u6703\u6383\u63cf\u5224\u5b9a\u76d2\uff0c\u50b7\u5bb3\u6575\u4eba\u6216\u53cd\u5f48\u53ef\u53cd\u5f48\u6295\u5c04\u7269\u3002
 public class PlayerWeaponHitbox : MonoBehaviour
 {
     private const string DefaultProjectileReflectEffectPath = "Assets/Art/Prefab/FX/CFXR4 Sword Hit FIRE (Cross) 1.prefab";
 
-    [Header("武器判定")]
-    [Tooltip("沒有使用模型邊界時，暫代武器顯示用的大小。手動調整攻擊範圍時，請直接調 Box Collider。")]
+    [Header("\u6b66\u5668\u5224\u5b9a")]
+    [Tooltip("\u6c92\u6709\u4f7f\u7528\u6a21\u578b\u908a\u754c\u6642\uff0c\u66ab\u4ee3\u6b66\u5668\u986f\u793a\u7528\u7684\u5927\u5c0f\u3002\u624b\u52d5\u8abf\u6574\u653b\u64ca\u7bc4\u570d\u6642\uff0c\u8acb\u76f4\u63a5\u8abf Box Collider\u3002")]
     [SerializeField] private Vector3 weaponSize = new Vector3(1.35f, 0.16f, 0.16f);
 
-    [Tooltip("沒有掛武器模型時，暫代武器方塊的顏色。")]
+    [Tooltip("\u6c92\u6709\u639b\u6b66\u5668\u6a21\u578b\u6642\uff0c\u66ab\u4ee3\u6b66\u5668\u65b9\u584a\u7684\u984f\u8272\u3002")]
     [SerializeField] private Color weaponColor = new Color(0.85f, 0.82f, 0.72f, 1f);
 
-    [Tooltip("用來計算攻擊判定範圍的武器模型根物件，例如 TV_Weapon_05。")]
+    [Tooltip("\u7528\u4f86\u8a08\u7b97\u653b\u64ca\u5224\u5b9a\u7bc4\u570d\u7684\u6b66\u5668\u6a21\u578b\u6839\u7269\u4ef6\uff0c\u4f8b\u5982 TV_Weapon_05\u3002")]
     [SerializeField] private Transform weaponModelRoot;
 
-    [Tooltip("開啟後，編輯模式會依照 Weapon Model Root 的 Renderer 邊界自動設定 Box Collider。關閉後可直接手動調 Collider。")]
+    [Tooltip("\u958b\u555f\u5f8c\uff0c\u7de8\u8f2f\u6a21\u5f0f\u6703\u4f9d\u7167 Weapon Model Root \u7684 Renderer \u908a\u754c\u81ea\u52d5\u8a2d\u5b9a Box Collider\u3002\u95dc\u9589\u5f8c\u53ef\u76f4\u63a5\u624b\u52d5\u8abf Collider\u3002")]
     [SerializeField] private bool useModelBoundsForHitbox;
 
-    [Tooltip("開啟後，Play 模式也會依照模型邊界更新 Collider。通常關閉，避免手動調整被覆蓋。")]
+    [Tooltip("\u958b\u555f\u5f8c\uff0cPlay \u6a21\u5f0f\u4e5f\u6703\u4f9d\u7167\u6a21\u578b\u908a\u754c\u66f4\u65b0 Collider\u3002\u901a\u5e38\u95dc\u9589\uff0c\u907f\u514d\u624b\u52d5\u8abf\u6574\u88ab\u8986\u84cb\u3002")]
     [SerializeField] private bool updateColliderDuringPlay;
 
-    [Tooltip("依照模型邊界建立判定盒時，額外增加的寬度，避免判定太貼模型。")]
+    [Tooltip("\u4f9d\u7167\u6a21\u578b\u908a\u754c\u5efa\u7acb\u5224\u5b9a\u76d2\u6642\uff0c\u984d\u5916\u589e\u52a0\u7684\u5bec\u5ea6\uff0c\u907f\u514d\u5224\u5b9a\u592a\u8cbc\u6a21\u578b\u3002")]
     [SerializeField] private Vector3 modelBoundsPadding = new Vector3(0.04f, 0.04f, 0.04f);
 
-    [Header("火球反擊")]
-    [Tooltip("只用於反擊火球的額外判定範圍，單位是世界座標。這不會放大打敵人的範圍。")]
+    [Header("\u706b\u7403\u53cd\u64ca")]
+    [Tooltip("\u53ea\u7528\u65bc\u53cd\u64ca\u706b\u7403\u7684\u984d\u5916\u5224\u5b9a\u7bc4\u570d\uff0c\u55ae\u4f4d\u662f\u4e16\u754c\u5ea7\u6a19\u3002\u9019\u4e0d\u6703\u653e\u5927\u6253\u6575\u4eba\u7684\u7bc4\u570d\u3002")]
     [SerializeField] private Vector3 projectileReflectExtraRange = new Vector3(0.45f, 0.3f, 0.3f);
 
-    [Tooltip("火球反擊成功瞬間播放的特效 Prefab。預設使用 CFXR4 Sword Hit FIRE (Cross) 1。")]
+    [Tooltip("\u706b\u7403\u53cd\u64ca\u6210\u529f\u77ac\u9593\u64ad\u653e\u7684\u7279\u6548 Prefab\u3002\u9810\u8a2d\u4f7f\u7528 CFXR4 Sword Hit FIRE (Cross) 1\u3002")]
     [SerializeField] private GameObject projectileReflectEffectPrefab;
 
-    [Tooltip("反擊特效大小倍率。")]
+    [Tooltip("\u53cd\u64ca\u7279\u6548\u5927\u5c0f\u500d\u7387\u3002")]
     [SerializeField] private float projectileReflectEffectScale = 1f;
 
-    [Tooltip("沒有粒子生命週期可判斷時，反擊特效保留幾秒後自動刪除。")]
+    [Tooltip("\u6c92\u6709\u7c92\u5b50\u751f\u547d\u9031\u671f\u53ef\u5224\u65b7\u6642\uff0c\u53cd\u64ca\u7279\u6548\u4fdd\u7559\u5e7e\u79d2\u5f8c\u81ea\u52d5\u522a\u9664\u3002")]
     [SerializeField] private float projectileReflectEffectFallbackLifetime = 2f;
 
     private readonly HashSet<Health> damagedThisSwing = new HashSet<Health>();
