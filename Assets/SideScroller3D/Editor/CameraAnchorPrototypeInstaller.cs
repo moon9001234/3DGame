@@ -7,7 +7,7 @@ public static class CameraAnchorPrototypeInstaller
 {
     private const string PrototypeScenePath = "Assets/SideScroller3D/Scenes/Prototype.unity";
 
-    [MenuItem("Tools/3D 遊戲工具/套用平台跟隨鏡頭")]
+    [MenuItem("Tools/3D \u904a\u6232\u5de5\u5177/\u5957\u7528\u5e73\u53f0\u8ddf\u96a8\u93e1\u982d")]
     public static void Apply()
     {
         Scene scene = EditorSceneManager.OpenScene(PrototypeScenePath, OpenSceneMode.Single);
@@ -19,7 +19,7 @@ public static class CameraAnchorPrototypeInstaller
 
         if (mainCamera == null || player == null)
         {
-            Debug.LogWarning("CameraAnchorPrototypeInstaller: 找不到 Main Camera 或 Player。");
+            Debug.LogWarning("CameraAnchorPrototypeInstaller: \u627e\u4e0d\u5230 Main Camera \u6216 Player\u3002");
             return;
         }
 
@@ -36,7 +36,7 @@ public static class CameraAnchorPrototypeInstaller
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
 
-        Debug.Log("CameraAnchorPrototypeInstaller: Prototype 已套用跳板垂直跟隨攝影機。");
+        Debug.Log("CameraAnchorPrototypeInstaller: Prototype \u5df2\u5957\u7528\u8df3\u677f\u5782\u76f4\u8ddf\u96a8\u651d\u5f71\u6a5f\u3002");
     }
 
     private static void SetupSideScrollerCamera(Camera mainCamera, Transform player)

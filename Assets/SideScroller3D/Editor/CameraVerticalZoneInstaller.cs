@@ -7,7 +7,7 @@ public static class CameraVerticalZoneInstaller
 {
     private const string PrototypeScenePath = "Assets/SideScroller3D/Scenes/Prototype.unity";
 
-    [MenuItem("Tools/3D 遊戲工具/套用鏡頭垂直區域")]
+    [MenuItem("Tools/3D \u904a\u6232\u5de5\u5177/\u5957\u7528\u93e1\u982d\u5782\u76f4\u5340\u57df")]
     public static void Apply()
     {
         Scene scene = EditorSceneManager.OpenScene(PrototypeScenePath, OpenSceneMode.Single);
@@ -15,7 +15,7 @@ public static class CameraVerticalZoneInstaller
 
         if (cameraFollow == null)
         {
-            Debug.LogWarning("CameraVerticalZoneInstaller: Prototype 場景中找不到 SideScrollerCamera。");
+            Debug.LogWarning("CameraVerticalZoneInstaller: Prototype \u5834\u666f\u4e2d\u627e\u4e0d\u5230 SideScrollerCamera\u3002");
             return;
         }
 
@@ -36,7 +36,7 @@ public static class CameraVerticalZoneInstaller
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
 
-        Debug.Log("CameraVerticalZoneInstaller: Prototype 攝影機垂直死區設定已套用。");
+        Debug.Log("CameraVerticalZoneInstaller: Prototype \u651d\u5f71\u6a5f\u5782\u76f4\u6b7b\u5340\u8a2d\u5b9a\u5df2\u5957\u7528\u3002");
     }
 
     private static void SetBool(SerializedObject serializedObject, string propertyName, bool value)

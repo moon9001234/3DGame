@@ -34,13 +34,13 @@ public static class PlayerAnimatorAttackRepair
         EditorApplication.delayCall += EnsurePlayerAttackStates;
     }
 
-    [MenuItem("Tools/3D 遊戲工具/修復玩家攻擊 Animator")]
+    [MenuItem("Tools/3D \u904a\u6232\u5de5\u5177/\u4fee\u5fa9\u73a9\u5bb6\u653b\u64ca Animator")]
     public static void EnsurePlayerAttackStates()
     {
         RepairPlayerAnimator();
     }
 
-    [MenuItem("Tools/3D 遊戲工具/修復玩家 Animator")]
+    [MenuItem("Tools/3D \u904a\u6232\u5de5\u5177/\u4fee\u5fa9\u73a9\u5bb6 Animator")]
     public static void EnsurePlayerAnimatorStates()
     {
         RepairPlayerAnimator();
