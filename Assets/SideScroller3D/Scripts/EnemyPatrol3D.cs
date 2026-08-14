@@ -1,0 +1,2211 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.Serialization;
+
+[RequireComponent(typeof(Rigidbody))]
+public class EnemyPatrol3D : MonoBehaviour
+{
+    private const string ContactDamageObjectName = "Enemy_ContactDamage";
+    private const string DefaultHitSoundPath = "Assets/Art/Sound/Hit.wav";
+
+    public enum AttackMode
+    {
+        Melee,
+        Ranged,
+        Boss
+    }
+
+    private enum EnemyState
+    {
+        Patrol,
+        Chase,
+        Attack,
+        ReturnHome
+    }
+
+    private enum MovementMode
+    {
+        Free3D,
+        SideScroller
+    }
+
+    [System.Serializable]
+    private class BossProjectileType
+    {
+        [Tooltip("Name used for the spawned projectile object.")]
+        [SerializeField] private string name = "Projectile";
+
+        [Tooltip("Optional visual object for this projectile. If empty, the same index child under Shoot will be used.")]
+        [SerializeField] private Transform visualTemplate;
+
+        [Tooltip("If enabled, the player can reflect this projectile with a counter attack.")]
+        [SerializeField] private bool canBeReflected = true;
+
+        [Tooltip("Damage dealt by this Boss projectile.")]
+        [FormerlySerializedAs("damageOverride")]
+        [SerializeField] private int projectileDamage = 1;
+
+        [Tooltip("Flying speed for this Boss projectile.")]
+        [FormerlySerializedAs("speedOverride")]
+        [SerializeField] private float projectileSpeed = 5.5f;
+
+        [Tooltip("Seconds before this Boss projectile is destroyed automatically.")]
+        [FormerlySerializedAs("lifetimeOverride")]
+        [SerializeField] private float projectileLifetime = 5f;
+
+        [Tooltip("Boss target distance from the player before firing this projectile.")]
+        [SerializeField] private float rangedDistance = 4.5f;
+
+        [Tooltip("Optional hit sound for this Boss projectile. If empty, the enemy Projectile Hit Sound is used.")]
+        [SerializeField] private AudioClip hitSound;
+
+        [Tooltip("Volume for this Boss projectile hit sound.")]
+        [SerializeField, Range(0f, 1f)] private float hitSoundVolume = 1f;
+
+        public BossProjectileType()
+        {
+        }
+
+        public BossProjectileType(string name, bool canBeReflected)
+        {
+            this.name = name;
+            this.canBeReflected = canBeReflected;
+        }
+
+        public BossProjectileType(string name, bool canBeReflected, float rangedDistance)
+        {
+            this.name = name;
+            this.canBeReflected = canBeReflected;
+            this.rangedDistance = rangedDistance;
+        }
+
+        public string Name => string.IsNullOrEmpty(name) ? "BossProjectile" : name;
+        public Transform VisualTemplate => visualTemplate;
+        public bool CanBeReflected => canBeReflected;
+
+        public int ResolveDamage(int fallback)
+        {
+            return projectileDamage >= 0 ? projectileDamage : fallback;
+        }
+
+        public float ResolveSpeed(float fallback)
+        {
+            return projectileSpeed > 0f ? projectileSpeed : fallback;
+        }
+
+        public float ResolveLifetime(float fallback)
+        {
+            return projectileLifetime > 0f ? projectileLifetime : fallback;
+        }
+
+        public float ResolveRangedDistance(float fallback)
+        {
+            return rangedDistance > 0f ? rangedDistance : fallback;
+        }
+
+        public AudioClip ResolveHitSound(AudioClip fallback)
+        {
+            return hitSound != null ? hitSound : fallback;
+        }
+
+        public float ResolveHitSoundVolume(float fallback)
+        {
+            return hitSound != null ? Mathf.Clamp01(hitSoundVolume) : Mathf.Clamp01(fallback);
+        }
+
+        public void Validate(int defaultDamage, float defaultSpeed, float defaultLifetime, float defaultRangedDistance)
+        {
+            if (projectileDamage < 0)
+            {
+                projectileDamage = Mathf.Max(0, defaultDamage);
+            }
+
+            if (projectileSpeed <= 0f)
+            {
+                projectileSpeed = Mathf.Max(0.1f, defaultSpeed);
+            }
+
+            if (projectileLifetime <= 0f)
+            {
+                projectileLifetime = Mathf.Max(0.1f, defaultLifetime);
+            }
+
+            if (rangedDistance <= 0f)
+            {
+                string projectileName = string.IsNullOrEmpty(name) ? string.Empty : name.ToLowerInvariant();
+                rangedDistance = projectileName.Contains("fire")
+                    ? Mathf.Max(0.1f, defaultRangedDistance + 1.3f)
+                    : Mathf.Max(0.1f, defaultRangedDistance);
+            }
+
+            hitSoundVolume = Mathf.Clamp01(hitSoundVolume);
+        }
+    }
+
+    [Header("敵人類型")]
+    [Tooltip("敵人的攻擊模式。Melee 是近戰，Ranged 是遠程火球。")]
+    [SerializeField] private AttackMode attackMode = AttackMode.Melee;
+
+    [Header("巡邏")]
+    [Tooltip("開啟後，敵人會用自身 Transform 的 Right 方向當作移動、追擊與攻擊判定方向。")]
+    [SerializeField] private MovementMode movementMode = MovementMode.Free3D;
+
+    [SerializeField] private bool useTransformRightAsMovementAxis = true;
+
+    [Tooltip("關閉自動抓取時，手動指定敵人的移動軸。")]
+    [SerializeField] private Vector3 movementAxis = Vector3.right;
+
+    [Tooltip("開啟後，敵人會被限制在移動軸形成的平面上，避免走到錯誤深度。")]
+    [SerializeField] private bool lockDepthToMovementPlane = true;
+
+    [Tooltip("敵人追擊玩家時的移動速度。")]
+    [SerializeField] private float moveSpeed = 2f;
+    [Tooltip("敵人巡邏時的移動速度。")]
+    [SerializeField] private float patrolMoveSpeed = 1.6f;
+    [Tooltip("敵人返回出生點時，距離小於這個值就視為已經回到原位。")]
+    [SerializeField] private float homeStopDistance = 0.12f;
+    [Tooltip("沒有可用巡邏點時，敵人會以出生點左右這個距離作為巡邏範圍。")]
+    [SerializeField] private float fallbackPatrolHalfWidth = 2f;
+
+    [SerializeField] private float patrolRadius = 3f;
+
+    [SerializeField] private float patrolDestinationReachDistance = 0.25f;
+
+    [SerializeField] private float patrolDestinationMinDistance = 1f;
+    [Tooltip("可選的巡邏障礙 Layer 篩選。只有開啟 Use Patrol Obstacle Mask 時才會套用。")]
+    [SerializeField] private LayerMask patrolObstacleMask;
+
+    [Tooltip("開啟後，前方障礙偵測只會偵測 Patrol Obstacle Mask 指定的 Layer。關閉時會偵測所有會阻擋移動的實體 Collider。")]
+    [SerializeField] private bool usePatrolObstacleMask;
+    [Tooltip("巡邏方向前方用來偵測障礙物的距離。")]
+    [SerializeField] private float patrolObstacleCheckDistance = 0.35f;
+    [Tooltip("巡邏障礙偵測射線的三個高度，X/Y/Z 分別代表低、中、高射線。")]
+    [SerializeField] private Vector3 patrolObstacleRayHeights = new Vector3(0.2f, 0.65f, 1.1f);
+
+    [Header("偵測")]
+    [Tooltip("玩家進入這個偵測盒的水平範圍後，敵人會開始追擊或進入戰鬥。")]
+    [SerializeField] private float searchRange = 7f;
+    [Tooltip("玩家離開這個放棄偵測盒後，敵人會停止追擊並返回出生點。")]
+    [SerializeField] private float giveUpRange = 9f;
+    [Tooltip("偵測盒相對於敵人根物件的位置偏移。Y 可控制偵測盒高度中心。")]
+    [SerializeField] private Vector3 detectionBoxOffset = new Vector3(0f, 0.75f, 0f);
+    [Tooltip("偵測盒的高度。調小可以避免玩家在敵人頭頂也觸發追擊。")]
+    [SerializeField] private float detectionBoxHeight = 1.6f;
+    [Tooltip("偵測盒在深度方向的厚度。")]
+    [SerializeField] private float detectionBoxDepth = 2f;
+    [Tooltip("放棄追擊的偵測盒額外外擴量，避免玩家剛到邊界就讓敵人反覆切換狀態。")]
+    [SerializeField] private float giveUpBoxPadding = 1f;
+    [Tooltip("Show the enemy detection box in the Scene view.")]
+    [SerializeField] private bool showDetectionBoxGizmo = true;
+    [Tooltip("If enabled, the detection box is shown only when this enemy is selected.")]
+    [SerializeField] private bool onlyShowDetectionBoxWhenSelected;
+
+    [Header("近戰攻擊")]
+    [Tooltip("近戰攻擊向前打出的距離，也就是紅色攻擊框的前後長度。")]
+    [SerializeField] private float attackRange = 1.45f;
+    [Tooltip("近戰攻擊框的高度。調小可以避免打到敵人頭頂太高處的玩家。")]
+    [FormerlySerializedAs("verticalSearchRange")]
+    [SerializeField] private float meleeAttackHeight = 2.5f;
+    [Tooltip("近戰攻擊命中玩家時造成的傷害。")]
+    [SerializeField] private int attackDamage = 1;
+    [Tooltip("Sound played when this enemy melee attack hits the player.")]
+    [SerializeField] private AudioClip meleeHitSound;
+    [Tooltip("Volume for the enemy melee hit sound.")]
+    [SerializeField, Range(0f, 1f)] private float meleeHitSoundVolume = 1f;
+    [Header("遠程攻擊")]
+    [Tooltip("遠程火球命中玩家或被玩家反擊後命中敵人時造成的傷害。")]
+    [SerializeField] private int projectileDamage = 1;
+    [Tooltip("遠程火球的飛行速度。")]
+    [SerializeField] private float projectileSpeed = 5.5f;
+    [Tooltip("遠程火球存在幾秒後自動消失。")]
+    [SerializeField] private float projectileLifetime = 5f;
+    [Tooltip("Sound played when this enemy projectile hits its target.")]
+    [SerializeField] private AudioClip projectileHitSound;
+    [Tooltip("Volume for the enemy projectile hit sound.")]
+    [SerializeField, Range(0f, 1f)] private float projectileHitSoundVolume = 1f;
+    [Tooltip("沒有 Shoot 發射點時，火球會從敵人身上這個本地偏移位置發射。")]
+    [SerializeField] private Vector3 projectileLocalOffset = new Vector3(0.65f, 0.95f, 0f);
+    [Tooltip("遠程敵人返回出生點時的移動速度。")]
+    [SerializeField] private float returnSpeed = 1.8f;
+
+    [Header("Boss 攻擊")]
+    [Tooltip("Boss 遠程攻擊前會和玩家保持的水平距離。距離太近會後退，太遠會靠近。")]
+    [SerializeField] private float bossRangedDistance = 4.5f;
+
+    [Tooltip("Boss 遠程距離允許的誤差範圍。玩家距離落在 Boss Ranged Distance 正負這個值內才會遠攻。")]
+    [SerializeField] private float bossRangedDistanceTolerance = 0.35f;
+
+    [Header("Boss Contact Damage")]
+    [Tooltip("Enable damage when the player touches the Boss body.")]
+    [SerializeField] private bool bossContactDamageEnabled = true;
+    [Tooltip("Damage applied when the player touches the Boss.")]
+    [SerializeField] private int bossContactDamage = 1;
+    [Tooltip("Seconds before Boss contact damage can hit the same target again.")]
+    [SerializeField] private float bossContactDamageCooldown = 0.8f;
+    [Tooltip("Local box size used by the generated Boss contact damage trigger.")]
+    [SerializeField] private Vector3 bossContactDamageBoxSize = new Vector3(1.7f, 2.2f, 1.2f);
+    [Tooltip("Local center used by the generated Boss contact damage trigger.")]
+    [SerializeField] private Vector3 bossContactDamageBoxCenter = new Vector3(0f, 1f, 0f);
+    [Tooltip("Layers damaged by Boss contact damage. Leave empty to use Player.")]
+    [SerializeField] private LayerMask bossContactDamageTargetMask;
+
+    [Header("Boss Remote Projectiles")]
+    [Tooltip("Boss projectile list. If Visual Template is empty, the same index child under Shoot will be used. Example: Element 0 Fireball cannot reflect, Element 1 IronBall can reflect.")]
+    [SerializeField] private BossProjectileType[] bossProjectileTypes =
+    {
+        new BossProjectileType("Fireball", false, 5.8f),
+        new BossProjectileType("IronBall", true, 4f)
+    };
+
+    [Header("攻擊時間")]
+    [Tooltip("兩次攻擊之間的最短間隔秒數。")]
+    [SerializeField] private float attackCooldown = 1.25f;
+    [Tooltip("When enabled, projectile attacks use Ranged Attack Rhythm instead of the fixed Attack Cooldown.")]
+    [SerializeField] private bool useRangedAttackRhythm;
+    [Tooltip("Projectile attack intervals in seconds. Each value is used after one projectile attack, then the pattern loops.")]
+    [SerializeField] private float[] rangedAttackRhythm = { 1.25f };
+    [Tooltip("開始攻擊後，延遲幾秒才真正造成傷害或射出火球。")]
+    [SerializeField] private float attackWindup = 0.25f;
+    [Tooltip("攻擊動作期間敵人不能移動的秒數。")]
+    [SerializeField] private float attackLockSeconds = 0.55f;
+
+    [Header("死亡表演")]
+    [Tooltip("開啟後，敵人死亡時會被彈飛出畫面，而不是立刻消失。")]
+    [SerializeField] private bool launchAwayOnDeath = true;
+    [Tooltip("敵人死亡彈飛的水平速度。")]
+    [SerializeField] private float deathLaunchSpeed = 8f;
+    [Tooltip("敵人死亡彈飛的向上速度。")]
+    [SerializeField] private float deathLaunchUpSpeed = 5f;
+    [Tooltip("敵人死亡彈飛時每秒旋轉的角度。")]
+    [SerializeField] private float deathSpinDegreesPerSecond = 720f;
+    [Tooltip("敵人死亡後等待幾秒才隱藏，接著進入重生等待。")]
+    [SerializeField] private float deathDestroyDelay = 1.25f;
+
+    [Header("受傷擊退")]
+    [Tooltip("開啟後，敵人受到傷害時會往傷害來源的反方向彈開。")]
+    [SerializeField] private bool knockbackOnDamage = true;
+
+    [Tooltip("敵人受傷擊退力道。X 是水平彈開速度，Y 是向上彈起速度。")]
+    [SerializeField] private Vector2 damageKnockbackForce = new Vector2(3.2f, 1.2f);
+
+    [Tooltip("受傷擊退後，敵人暫停巡邏/追擊控制的秒數。")]
+    [SerializeField] private float damageKnockbackLockSeconds = 0.18f;
+
+    [Tooltip("受擊動作在空中要暫停的時間點。0.5 代表 290~300 之間的 295。")]
+    [SerializeField] private float airborneHitPauseNormalizedTime = 0.5f;
+
+    [Tooltip("敵人受擊落地後，等待幾秒才恢復巡邏或追擊。")]
+    [SerializeField] private float damageLandingRecoverySeconds = 0.5f;
+
+    [Tooltip("判斷受擊後是否落地的額外距離。")]
+    [SerializeField] private float damageGroundCheckDistance = 0.08f;
+
+    [Tooltip("受擊落地判斷使用的地面 Layer。留空時使用 Ground layer。")]
+    [SerializeField] private LayerMask damageGroundMask;
+
+    [Header("重生")]
+    [Tooltip("開啟後，敵人死亡且攝影機離開出生點一段時間後會重生。")]
+    [SerializeField] private bool respawnAfterCameraLeaves = true;
+    [Tooltip("攝影機離開敵人出生點後，要等待幾秒才重生。")]
+    [SerializeField] private float respawnCameraAwaySeconds = 5f;
+    [Tooltip("判斷出生點是否離開攝影機畫面時，額外加上的畫面外緩衝。")]
+    [SerializeField] private float respawnViewportPadding = 0.1f;
+
+    private Rigidbody body;
+    private Collider bodyCollider;
+    private Health health;
+    private Transform target;
+    private Transform cachedTargetColliderRoot;
+    private Collider[] targetBodyColliders = new Collider[0];
+    private Transform projectileSpawn;
+    private Transform projectileVisualTemplate;
+    private Transform[] projectileVisualTemplates;
+    private EnemyVisualAnimator visualAnimator;
+    private EnemyGrounder3D grounder;
+    private EnemyState state = EnemyState.Patrol;
+    private int direction = 1;
+    private float leftPatrolDistance;
+    private float rightPatrolDistance;
+    private Vector3 homePosition;
+    private Quaternion spawnRotation;
+    private Vector3 spawnScale;
+    private int spawnDirection;
+    private RigidbodyConstraints aliveConstraints;
+    private bool aliveUseGravity;
+    private bool aliveIsKinematic;
+    private Vector3 depthAxis = Vector3.forward;
+    private float lockedDepth;
+    private float nextAttackTime;
+    private float attackResolveTime;
+    private float attackEndTime;
+    private bool attackResolved = true;
+    private bool currentAttackUsesRanged;
+    private int rangedAttackRhythmIndex;
+    private bool deathSequenceStarted;
+    private int selectedBossProjectileIndex = -1;
+    private Collider[] deathDisabledColliders;
+    private bool[] deathDisabledColliderStates;
+    private Renderer[] deathHiddenRenderers;
+    private bool[] deathHiddenRendererStates;
+    private readonly RaycastHit[] obstacleHits = new RaycastHit[8];
+    private readonly RaycastHit[] damageGroundHits = new RaycastHit[8];
+    private float damageKnockbackLockedUntil;
+    private float damageLandingRecoveryUntil;
+    private float damageGroundContactUntil;
+    private bool waitingForDamageLanding;
+    private Vector3 patrolDestination;
+    private bool hasPatrolDestination;
+    private bool damageGrounderStateStored;
+    private bool grounderWasEnabledBeforeDamage;
+    private bool damageGravityStateStored;
+    private bool useGravityBeforeDamage;
+
+    public AttackMode Mode => attackMode;
+    private bool UsesFree3DMovement => movementMode == MovementMode.Free3D;
+
+    public void SetAttackMode(AttackMode mode)
+    {
+        attackMode = mode;
+        selectedBossProjectileIndex = -1;
+        ResetRangedAttackRhythm();
+        if (UsesProjectileAttack())
+        {
+            EnsureProjectileSpawn();
+            EnsureProjectileVisualTemplate();
+        }
+    }
+
+    private void OnValidate()
+    {
+        AssignDefaultHitSoundsIfNeeded();
+        meleeHitSoundVolume = Mathf.Clamp01(meleeHitSoundVolume);
+        projectileHitSoundVolume = Mathf.Clamp01(projectileHitSoundVolume);
+        ValidateRangedAttackRhythm();
+        EnsureDefaultBossProjectileTypes();
+        ValidateBossProjectileTypes();
+        ValidateBossContactDamageSettings();
+        if (Application.isPlaying)
+        {
+            ConfigureBossContactDamage();
+        }
+    }
+
+    private void AssignDefaultHitSoundsIfNeeded()
+    {
+#if UNITY_EDITOR
+        AudioClip defaultHitSound = null;
+        if (meleeHitSound == null || projectileHitSound == null)
+        {
+            defaultHitSound = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>(DefaultHitSoundPath);
+        }
+
+        if (meleeHitSound == null)
+        {
+            meleeHitSound = defaultHitSound;
+        }
+
+        if (projectileHitSound == null)
+        {
+            projectileHitSound = defaultHitSound;
+        }
+#endif
+    }
+
+    private void Awake()
+    {
+        AssignDefaultHitSoundsIfNeeded();
+        body = GetComponent<Rigidbody>();
+        EnsureBodyCollider();
+        health = GetComponent<Health>();
+        visualAnimator = GetComponent<EnemyVisualAnimator>();
+        if (visualAnimator == null)
+        {
+            visualAnimator = gameObject.AddComponent<EnemyVisualAnimator>();
+        }
+
+        grounder = GetComponent<EnemyGrounder3D>();
+        if (grounder == null)
+        {
+            grounder = gameObject.AddComponent<EnemyGrounder3D>();
+        }
+
+        NormalizeMovementPlane();
+        body.constraints = RigidbodyConstraints.FreezeRotation;
+        homePosition = transform.position;
+        spawnRotation = transform.rotation;
+        spawnScale = transform.localScale;
+        spawnDirection = direction;
+        aliveConstraints = body.constraints;
+        aliveUseGravity = body.useGravity;
+        aliveIsKinematic = body.isKinematic;
+        EnsureDefaultBossProjectileTypes();
+        ConfigureBossContactDamage();
+        EnsureBossClearOnDeath();
+        ConfigurePatrolBounds();
+        if (UsesProjectileAttack())
+        {
+            EnsureProjectileSpawn();
+            EnsureProjectileVisualTemplate();
+        }
+
+        FindTarget();
+    }
+
+    private void OnEnable()
+    {
+        if (health != null)
+        {
+            health.Damaged += ApplyDamageKnockback;
+            health.Died += Die;
+        }
+    }
+
+    private void OnDisable()
+    {
+        if (health != null)
+        {
+            health.Damaged -= ApplyDamageKnockback;
+            health.Died -= Die;
+        }
+    }
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        RegisterDamageGroundContact(collision);
+    }
+
+    private void OnCollisionStay(Collision collision)
+    {
+        RegisterDamageGroundContact(collision);
+    }
+
+    private void FixedUpdate()
+    {
+        if (deathSequenceStarted)
+        {
+            return;
+        }
+
+        if (health != null && health.IsDead)
+        {
+            StopMoving();
+            return;
+        }
+
+        if (UpdateDamageRecoveryLock())
+        {
+            return;
+        }
+
+        if (target == null)
+        {
+            FindTarget();
+        }
+
+        UpdateState();
+        visualAnimator?.SetCombatMode(state == EnemyState.Attack || IsTargetInAttackRange());
+
+        switch (state)
+        {
+            case EnemyState.Chase:
+                Chase();
+                break;
+            case EnemyState.Attack:
+                Attack();
+                break;
+            case EnemyState.ReturnHome:
+                ReturnHome();
+                break;
+            default:
+                Patrol();
+                break;
+        }
+
+        grounder?.SnapToGround();
+    }
+
+    private void UpdateState()
+    {
+        if (state == EnemyState.Attack && Time.time < attackEndTime)
+        {
+            return;
+        }
+
+        if (target == null)
+        {
+            selectedBossProjectileIndex = -1;
+            ResetRangedAttackRhythm();
+            state = EnemyState.Patrol;
+            return;
+        }
+
+        bool canNoticeTarget = IsTargetInsideDetectionBox(searchRange, detectionBoxHeight, detectionBoxDepth);
+        bool shouldGiveUp = !IsTargetInsideDetectionBox(giveUpRange, detectionBoxHeight + giveUpBoxPadding, detectionBoxDepth + giveUpBoxPadding);
+        bool targetInAttackRange = IsTargetInAttackRange();
+        bool isEngaged = state == EnemyState.Chase || state == EnemyState.Attack;
+
+        if (shouldGiveUp && isEngaged)
+        {
+            selectedBossProjectileIndex = -1;
+            ResetRangedAttackRhythm();
+            state = EnemyState.ReturnHome;
+            return;
+        }
+
+        if (targetInAttackRange && attackMode != AttackMode.Ranged)
+        {
+            state = EnemyState.Attack;
+            return;
+        }
+
+        if (canNoticeTarget)
+        {
+            if (attackMode == AttackMode.Ranged)
+            {
+                state = EnemyState.Attack;
+                return;
+            }
+
+            if (attackMode == AttackMode.Boss)
+            {
+                state = IsBossReadyToAttack() ? EnemyState.Attack : EnemyState.Chase;
+                return;
+            }
+
+            state = targetInAttackRange ? EnemyState.Attack : EnemyState.Chase;
+            return;
+        }
+
+        if (state == EnemyState.ReturnHome)
+        {
+            if (GetHorizontalDistanceTo(homePosition) <= homeStopDistance)
+            {
+                state = EnemyState.Patrol;
+            }
+
+            return;
+        }
+
+        state = EnemyState.Patrol;
+        selectedBossProjectileIndex = -1;
+        ResetRangedAttackRhythm();
+    }
+
+    private void Patrol()
+    {
+        if (UsesFree3DMovement)
+        {
+            PatrolFree3D();
+            return;
+        }
+
+        if (HasPatrolObstacleAhead())
+        {
+            TurnAround();
+        }
+
+        Move(direction, GetPatrolSpeed());
+
+        float patrolDistance = GetAxisDeltaFromHome(transform.position);
+        if (direction < 0 && patrolDistance <= leftPatrolDistance)
+        {
+            TurnAround();
+        }
+        else if (direction > 0 && patrolDistance >= rightPatrolDistance)
+        {
+            TurnAround();
+        }
+    }
+
+    private void PatrolFree3D()
+    {
+        if (!hasPatrolDestination
+            || GetPlanarDistanceTo(patrolDestination) <= Mathf.Max(0.05f, patrolDestinationReachDistance)
+            || HasPatrolObstacleAhead(GetPlanarDirectionTo(patrolDestination)))
+        {
+            PickPatrolDestination();
+        }
+
+        Move(GetPlanarDirectionTo(patrolDestination), GetPatrolSpeed());
+    }
+
+    private void Chase()
+    {
+        if (target == null)
+        {
+            state = EnemyState.ReturnHome;
+            return;
+        }
+
+        Vector3 targetDirection = GetMoveDirectionToTarget();
+        if (attackMode == AttackMode.Boss)
+        {
+            Move(GetBossChaseDirection(targetDirection, GetHorizontalDistanceToTarget()), moveSpeed * 1.25f);
+            return;
+        }
+
+        Move(targetDirection, moveSpeed * 1.25f);
+    }
+
+    private void Attack()
+    {
+        StopMoving();
+
+        FaceTarget();
+
+        if (Time.time >= nextAttackTime && Time.time >= attackEndTime)
+        {
+            FaceTarget();
+            visualAnimator = visualAnimator != null ? visualAnimator : GetComponent<EnemyVisualAnimator>();
+            float animationLockSeconds = visualAnimator != null ? visualAnimator.PlayAttack() : 0f;
+            float lockSeconds = Mathf.Max(attackLockSeconds, animationLockSeconds);
+
+            currentAttackUsesRanged = ShouldUseRangedAttackNow();
+            attackResolved = false;
+            attackResolveTime = Time.time + attackWindup;
+            attackEndTime = Time.time + lockSeconds;
+            float cooldown = currentAttackUsesRanged ? GetNextRangedAttackInterval() : attackCooldown;
+            nextAttackTime = Time.time + Mathf.Max(cooldown, lockSeconds);
+        }
+
+        if (!attackResolved && Time.time >= attackResolveTime)
+        {
+            if (currentAttackUsesRanged)
+            {
+                FireProjectile();
+            }
+            else
+            {
+                ResolveMeleeAttackHit();
+            }
+
+            attackResolved = true;
+        }
+
+        StopMoving();
+    }
+
+    private void ReturnHome()
+    {
+        if (GetHorizontalDistanceTo(homePosition) <= homeStopDistance)
+        {
+            StopMoving();
+            state = EnemyState.Patrol;
+            selectedBossProjectileIndex = -1;
+            ResetRangedAttackRhythm();
+            hasPatrolDestination = false;
+            return;
+        }
+
+        Move(GetMoveDirectionTo(homePosition), UsesProjectileAttack() ? returnSpeed : moveSpeed);
+    }
+
+    private void ResolveMeleeAttackHit()
+    {
+        if (target == null)
+        {
+            return;
+        }
+
+        if (!IsTargetInMeleeStrikeRange())
+        {
+            return;
+        }
+
+        if (target.TryGetComponent(out Health targetHealth))
+        {
+            if (targetHealth.TryTakeDamage(attackDamage, transform.position))
+            {
+                PlayHitSound(meleeHitSound, meleeHitSoundVolume, target.position);
+            }
+        }
+    }
+
+    private void FireProjectile()
+    {
+        FaceTarget();
+        EnsureProjectileSpawn();
+        EnsureProjectileVisualTemplate();
+
+        int projectileIndex;
+        BossProjectileType bossProjectileType = ResolveBossProjectileType(out projectileIndex);
+        Transform visualTemplate = ResolveProjectileTemplate(bossProjectileType, projectileIndex);
+        bool hasVisualTemplate = visualTemplate != null;
+        string projectileName = bossProjectileType != null ? bossProjectileType.Name : "Projectile";
+        GameObject projectileObject = new GameObject(string.IsNullOrEmpty(projectileName) ? "Projectile" : projectileName);
+        projectileObject.transform.position = projectileSpawn.position;
+        projectileObject.transform.rotation = Quaternion.identity;
+        projectileObject.transform.localScale = hasVisualTemplate ? Vector3.one : new Vector3(0.42f, 0.42f, 0.42f);
+
+        ReflectableProjectile3D projectile = projectileObject.AddComponent<ReflectableProjectile3D>();
+        if (hasVisualTemplate)
+        {
+            projectile.UseVisualTemplate(visualTemplate);
+        }
+
+        int resolvedDamage = bossProjectileType != null ? bossProjectileType.ResolveDamage(projectileDamage) : projectileDamage;
+        float resolvedSpeed = bossProjectileType != null ? bossProjectileType.ResolveSpeed(projectileSpeed) : projectileSpeed;
+        float resolvedLifetime = bossProjectileType != null ? bossProjectileType.ResolveLifetime(projectileLifetime) : projectileLifetime;
+        bool canBeReflected = bossProjectileType == null || bossProjectileType.CanBeReflected;
+        projectile.Launch(GetProjectileLaunchDirection(), gameObject, resolvedDamage, resolvedSpeed, resolvedLifetime, canBeReflected);
+        projectile.ConfigureHitSound(
+            bossProjectileType != null ? bossProjectileType.ResolveHitSound(projectileHitSound) : projectileHitSound,
+            bossProjectileType != null ? bossProjectileType.ResolveHitSoundVolume(projectileHitSoundVolume) : projectileHitSoundVolume);
+        selectedBossProjectileIndex = -1;
+    }
+
+    private float GetNextRangedAttackInterval()
+    {
+        if (!useRangedAttackRhythm || rangedAttackRhythm == null || rangedAttackRhythm.Length == 0)
+        {
+            return attackCooldown;
+        }
+
+        if (rangedAttackRhythmIndex < 0 || rangedAttackRhythmIndex >= rangedAttackRhythm.Length)
+        {
+            rangedAttackRhythmIndex = 0;
+        }
+
+        for (int i = 0; i < rangedAttackRhythm.Length; i++)
+        {
+            int index = rangedAttackRhythmIndex;
+            rangedAttackRhythmIndex = (rangedAttackRhythmIndex + 1) % rangedAttackRhythm.Length;
+
+            float interval = rangedAttackRhythm[index];
+            if (interval > 0f)
+            {
+                return interval;
+            }
+        }
+
+        return attackCooldown;
+    }
+
+    private void ResetRangedAttackRhythm()
+    {
+        rangedAttackRhythmIndex = 0;
+        currentAttackUsesRanged = false;
+    }
+
+    private void ValidateRangedAttackRhythm()
+    {
+        if (rangedAttackRhythm == null)
+        {
+            return;
+        }
+
+        for (int i = 0; i < rangedAttackRhythm.Length; i++)
+        {
+            rangedAttackRhythm[i] = Mathf.Max(0.01f, rangedAttackRhythm[i]);
+        }
+    }
+
+    private Vector3 GetProjectileLaunchDirection()
+    {
+        if (target != null)
+        {
+            Vector3 targetDirection = GetMoveDirectionToTarget();
+            if (targetDirection.sqrMagnitude > 0.0001f)
+            {
+                return targetDirection;
+            }
+        }
+
+        return GetFacingDirection();
+    }
+
+    private static void PlayHitSound(AudioClip clip, float volume, Vector3 position)
+    {
+        if (clip == null || volume <= 0f)
+        {
+            return;
+        }
+
+        SideScrollerSfxPlayer.PlayOneShot(clip, volume);
+    }
+
+    private bool IsTargetInAttackRange()
+    {
+        if (target == null)
+        {
+            return false;
+        }
+
+        float horizontalDistance = GetHorizontalDistanceToTarget();
+        if (!IsTargetWithinVerticalRange(transform.position.y, meleeAttackHeight))
+        {
+            return false;
+        }
+
+        if (attackMode == AttackMode.Ranged)
+        {
+            return IsTargetInsideDetectionBox(searchRange, detectionBoxHeight, detectionBoxDepth);
+        }
+
+        if (attackMode == AttackMode.Boss)
+        {
+            if (state != EnemyState.Chase && state != EnemyState.Attack)
+            {
+                return horizontalDistance <= attackRange;
+            }
+
+            return horizontalDistance <= attackRange || IsBossAtRangedDistance(horizontalDistance);
+        }
+
+        return horizontalDistance <= attackRange;
+    }
+
+    private float GetPatrolSpeed()
+    {
+        return UsesProjectileAttack() ? patrolMoveSpeed : moveSpeed;
+    }
+
+    private bool UsesProjectileAttack()
+    {
+        return attackMode == AttackMode.Ranged || attackMode == AttackMode.Boss;
+    }
+
+    private bool ShouldUseRangedAttackNow()
+    {
+        if (attackMode == AttackMode.Ranged)
+        {
+            return true;
+        }
+
+        if (attackMode != AttackMode.Boss || target == null)
+        {
+            return false;
+        }
+
+        bool shouldUseRanged = GetHorizontalDistanceToTarget() > attackRange;
+        if (!shouldUseRanged)
+        {
+            selectedBossProjectileIndex = -1;
+        }
+
+        return shouldUseRanged;
+    }
+
+    private bool IsBossReadyToAttack()
+    {
+        if (target == null)
+        {
+            return false;
+        }
+
+        float horizontalDistance = GetHorizontalDistanceToTarget();
+        if (horizontalDistance <= attackRange)
+        {
+            return true;
+        }
+
+        return IsBossAtRangedDistance(horizontalDistance);
+    }
+
+    private bool IsBossAtRangedDistance(float horizontalDistance)
+    {
+        float desiredDistance = Mathf.Max(attackRange + 0.05f, GetCurrentBossRangedDistance());
+        float tolerance = Mathf.Max(0.01f, bossRangedDistanceTolerance);
+        return Mathf.Abs(horizontalDistance - desiredDistance) <= tolerance;
+    }
+
+    private Vector3 GetBossChaseDirection(Vector3 targetDirection, float horizontalDistance)
+    {
+        if (targetDirection.sqrMagnitude < 0.0001f)
+        {
+            targetDirection = GetFacingDirection();
+        }
+
+        float desiredDistance = Mathf.Max(attackRange + 0.05f, GetCurrentBossRangedDistance());
+        float tolerance = Mathf.Max(0.01f, bossRangedDistanceTolerance);
+        if (horizontalDistance > desiredDistance + tolerance)
+        {
+            return targetDirection;
+        }
+
+        if (horizontalDistance < desiredDistance - tolerance)
+        {
+            return -targetDirection;
+        }
+
+        return Vector3.zero;
+    }
+
+    private BossProjectileType ResolveBossProjectileType(out int projectileIndex)
+    {
+        projectileIndex = -1;
+        if (attackMode != AttackMode.Boss)
+        {
+            return null;
+        }
+
+        EnsureDefaultBossProjectileTypes();
+        if (bossProjectileTypes == null || bossProjectileTypes.Length == 0)
+        {
+            return null;
+        }
+
+        projectileIndex = EnsureSelectedBossProjectileIndex();
+        return bossProjectileTypes[projectileIndex];
+    }
+
+    private Transform ResolveProjectileTemplate(BossProjectileType bossProjectileType, int projectileIndex)
+    {
+        if (attackMode != AttackMode.Boss)
+        {
+            return projectileVisualTemplate;
+        }
+
+        if (bossProjectileType != null && bossProjectileType.VisualTemplate != null)
+        {
+            return bossProjectileType.VisualTemplate;
+        }
+
+        if (projectileVisualTemplates == null || projectileVisualTemplates.Length == 0)
+        {
+            return projectileVisualTemplate;
+        }
+
+        int templateIndex = Mathf.Max(0, projectileIndex % projectileVisualTemplates.Length);
+        return projectileVisualTemplates[templateIndex];
+    }
+
+    private float GetCurrentBossRangedDistance()
+    {
+        if (attackMode != AttackMode.Boss)
+        {
+            return bossRangedDistance;
+        }
+
+        BossProjectileType bossProjectileType = GetSelectedBossProjectileType();
+        return bossProjectileType != null ? bossProjectileType.ResolveRangedDistance(bossRangedDistance) : bossRangedDistance;
+    }
+
+    private BossProjectileType GetSelectedBossProjectileType()
+    {
+        EnsureDefaultBossProjectileTypes();
+        if (bossProjectileTypes == null || bossProjectileTypes.Length == 0)
+        {
+            return null;
+        }
+
+        int index = EnsureSelectedBossProjectileIndex();
+        return bossProjectileTypes[index];
+    }
+
+    private int EnsureSelectedBossProjectileIndex()
+    {
+        EnsureDefaultBossProjectileTypes();
+        if (bossProjectileTypes == null || bossProjectileTypes.Length == 0)
+        {
+            selectedBossProjectileIndex = -1;
+            return -1;
+        }
+
+        if (selectedBossProjectileIndex < 0 || selectedBossProjectileIndex >= bossProjectileTypes.Length)
+        {
+            selectedBossProjectileIndex = Random.Range(0, bossProjectileTypes.Length);
+        }
+
+        return selectedBossProjectileIndex;
+    }
+
+    private void EnsureDefaultBossProjectileTypes()
+    {
+        if (bossProjectileTypes != null && bossProjectileTypes.Length > 0)
+        {
+            return;
+        }
+
+        bossProjectileTypes = new[]
+        {
+            new BossProjectileType("Fireball", false, 5.8f),
+            new BossProjectileType("IronBall", true, 4f)
+        };
+    }
+
+    private void ValidateBossProjectileTypes()
+    {
+        if (bossProjectileTypes == null)
+        {
+            return;
+        }
+
+        for (int i = 0; i < bossProjectileTypes.Length; i++)
+        {
+            if (bossProjectileTypes[i] != null)
+            {
+                bossProjectileTypes[i].Validate(projectileDamage, projectileSpeed, projectileLifetime, bossRangedDistance);
+            }
+        }
+    }
+
+    private void ConfigureBossContactDamage()
+    {
+        if (attackMode != AttackMode.Boss)
+        {
+            return;
+        }
+
+        ValidateBossContactDamageSettings();
+
+        Transform contactTransform = transform.Find(ContactDamageObjectName);
+        GameObject contactObject;
+        if (contactTransform != null)
+        {
+            contactObject = contactTransform.gameObject;
+        }
+        else
+        {
+            contactObject = new GameObject(ContactDamageObjectName);
+            contactTransform = contactObject.transform;
+            contactTransform.SetParent(transform, false);
+        }
+
+        int defaultLayer = LayerMask.NameToLayer("Default");
+        contactObject.layer = defaultLayer >= 0 ? defaultLayer : gameObject.layer;
+        contactTransform.localPosition = Vector3.zero;
+        contactTransform.localRotation = Quaternion.identity;
+        contactTransform.localScale = Vector3.one;
+
+        BoxCollider contactCollider = contactObject.GetComponent<BoxCollider>();
+        if (contactCollider == null)
+        {
+            contactCollider = contactObject.AddComponent<BoxCollider>();
+        }
+
+        contactCollider.isTrigger = true;
+        contactCollider.size = bossContactDamageBoxSize;
+        contactCollider.center = bossContactDamageBoxCenter;
+
+        DamageOnTouch damageOnTouch = contactObject.GetComponent<DamageOnTouch>();
+        if (damageOnTouch == null)
+        {
+            damageOnTouch = contactObject.AddComponent<DamageOnTouch>();
+        }
+
+        damageOnTouch.Configure(
+            bossContactDamageEnabled,
+            bossContactDamage,
+            ResolveBossContactDamageTargetMask(),
+            bossContactDamageCooldown);
+    }
+
+    private void ValidateBossContactDamageSettings()
+    {
+        bossContactDamage = Mathf.Max(0, bossContactDamage);
+        bossContactDamageCooldown = Mathf.Max(0.01f, bossContactDamageCooldown);
+        bossContactDamageBoxSize = new Vector3(
+            Mathf.Max(0.1f, Mathf.Abs(bossContactDamageBoxSize.x)),
+            Mathf.Max(0.1f, Mathf.Abs(bossContactDamageBoxSize.y)),
+            Mathf.Max(0.1f, Mathf.Abs(bossContactDamageBoxSize.z)));
+
+        if (bossContactDamageTargetMask.value == 0)
+        {
+            bossContactDamageTargetMask = ResolvePlayerLayerMask();
+        }
+    }
+
+    private LayerMask ResolveBossContactDamageTargetMask()
+    {
+        return bossContactDamageTargetMask.value != 0 ? bossContactDamageTargetMask : ResolvePlayerLayerMask();
+    }
+
+    private static LayerMask ResolvePlayerLayerMask()
+    {
+        int playerLayer = LayerMask.NameToLayer("Player");
+        return playerLayer >= 0 ? 1 << playerLayer : 1 << 8;
+    }
+
+    private void EnsureBossClearOnDeath()
+    {
+        if (attackMode != AttackMode.Boss || GetComponent<BossClearOnDeath3D>() != null)
+        {
+            return;
+        }
+
+        gameObject.AddComponent<BossClearOnDeath3D>();
+    }
+
+    private bool IsDamageKnockbackLocked => waitingForDamageLanding
+        || Time.time < damageKnockbackLockedUntil
+        || Time.time < damageLandingRecoveryUntil;
+
+    private void ApplyDamageKnockback(int amount, Vector3 damageSourcePosition)
+    {
+        if (amount <= 0 || body == null || deathSequenceStarted)
+        {
+            return;
+        }
+
+        Vector3 faceDirection = GetMoveDirectionTo(damageSourcePosition);
+        if (faceDirection.sqrMagnitude < 0.0001f)
+        {
+            faceDirection = GetFacingDirection();
+        }
+
+        Vector3 knockbackDirection = -faceDirection;
+        Face(faceDirection);
+        visualAnimator?.ResumeHit();
+        visualAnimator?.PlayHit();
+        visualAnimator?.PauseHitAtNormalizedTime(airborneHitPauseNormalizedTime);
+
+        if (!knockbackOnDamage)
+        {
+            return;
+        }
+
+        float horizontalSpeed = Mathf.Abs(damageKnockbackForce.x);
+        float upwardSpeed = Mathf.Abs(damageKnockbackForce.y);
+        Vector3 velocity = body.linearVelocity;
+        velocity = UsesFree3DMovement ? RemoveHorizontalVelocity(velocity) : RemoveAxisVelocity(velocity, movementAxis);
+        velocity += knockbackDirection * horizontalSpeed;
+        velocity.y = Mathf.Max(velocity.y, upwardSpeed);
+        body.linearVelocity = velocity;
+
+        damageKnockbackLockedUntil = Time.time + Mathf.Max(0f, damageKnockbackLockSeconds);
+        damageLandingRecoveryUntil = 0f;
+        damageGroundContactUntil = 0f;
+        waitingForDamageLanding = true;
+        SuspendGrounderForDamage();
+        EnableGravityForDamage();
+        attackResolved = true;
+        attackEndTime = Mathf.Max(attackEndTime, damageKnockbackLockedUntil);
+    }
+
+    private bool UpdateDamageRecoveryLock()
+    {
+        if (!IsDamageKnockbackLocked)
+        {
+            RestoreGrounderAfterDamage();
+            visualAnimator?.ResumeHit();
+            return false;
+        }
+
+        SnapToMovementPlane();
+        if (!waitingForDamageLanding)
+        {
+            return true;
+        }
+
+        if (!IsGroundedForDamageRecovery())
+        {
+            return true;
+        }
+
+        waitingForDamageLanding = false;
+        damageLandingRecoveryUntil = Time.time + Mathf.Max(0f, damageLandingRecoverySeconds);
+        damageKnockbackLockedUntil = Mathf.Max(damageKnockbackLockedUntil, damageLandingRecoveryUntil);
+        RestoreGrounderAfterDamage();
+        visualAnimator?.ResumeHit();
+        StopMoving();
+        return true;
+    }
+
+    private void EnableGravityForDamage()
+    {
+        if (body == null)
+        {
+            return;
+        }
+
+        if (!damageGravityStateStored)
+        {
+            useGravityBeforeDamage = body.useGravity;
+            damageGravityStateStored = true;
+        }
+
+        body.useGravity = true;
+    }
+
+    private void RegisterDamageGroundContact(Collision collision)
+    {
+        if (!waitingForDamageLanding || collision == null)
+        {
+            return;
+        }
+
+        EnsureBodyCollider();
+        Bounds bounds = bodyCollider != null ? bodyCollider.bounds : new Bounds(transform.position, Vector3.one);
+        float bottomContactY = bounds.min.y + Mathf.Max(0.02f, damageGroundCheckDistance + 0.08f);
+        for (int i = 0; i < collision.contactCount; i++)
+        {
+            ContactPoint contact = collision.GetContact(i);
+            bool isFloorNormal = contact.normal.y > 0.35f;
+            bool isNearBottom = contact.point.y <= bottomContactY;
+            if (contact.otherCollider != null
+                && !contact.otherCollider.transform.IsChildOf(transform)
+                && (isFloorNormal || isNearBottom))
+            {
+                damageGroundContactUntil = Time.time + 0.12f;
+                return;
+            }
+        }
+    }
+
+    private void SuspendGrounderForDamage()
+    {
+        if (grounder == null)
+        {
+            return;
+        }
+
+        if (!damageGrounderStateStored)
+        {
+            grounderWasEnabledBeforeDamage = grounder.enabled;
+            damageGrounderStateStored = true;
+        }
+
+        grounder.enabled = false;
+    }
+
+    private void RestoreGrounderAfterDamage()
+    {
+        if (grounder != null && damageGrounderStateStored)
+        {
+            grounder.enabled = grounderWasEnabledBeforeDamage;
+        }
+
+        damageGrounderStateStored = false;
+        RestoreGravityAfterDamage();
+    }
+
+    private void RestoreGravityAfterDamage()
+    {
+        if (body != null && damageGravityStateStored)
+        {
+            body.useGravity = useGravityBeforeDamage;
+        }
+
+        damageGravityStateStored = false;
+    }
+
+    private bool IsGroundedForDamageRecovery()
+    {
+        if (Time.time <= damageGroundContactUntil)
+        {
+            return body == null || body.linearVelocity.y <= 0.1f;
+        }
+
+        EnsureDamageGroundMask();
+        EnsureBodyCollider();
+        if (bodyCollider == null)
+        {
+            return false;
+        }
+
+        Bounds bounds = bodyCollider.bounds;
+        Vector3 origin = bounds.center + Vector3.up * 0.05f;
+        float rayDistance = bounds.extents.y + Mathf.Max(0.01f, damageGroundCheckDistance) + 0.05f;
+        return HasDamageGroundBelow(origin, rayDistance, damageGroundMask)
+            || HasDamageGroundBelow(origin, rayDistance, Physics.DefaultRaycastLayers);
+    }
+
+    private bool HasDamageGroundBelow(Vector3 origin, float rayDistance, int layerMask)
+    {
+        int hitCount = Physics.RaycastNonAlloc(origin, Vector3.down, damageGroundHits, rayDistance, layerMask, QueryTriggerInteraction.Ignore);
+        for (int i = 0; i < hitCount; i++)
+        {
+            Collider hitCollider = damageGroundHits[i].collider;
+            if (hitCollider != null && !hitCollider.transform.IsChildOf(transform) && !hitCollider.isTrigger)
+            {
+                return body == null || body.linearVelocity.y <= 0.1f;
+            }
+        }
+
+        return false;
+    }
+
+    private void EnsureDamageGroundMask()
+    {
+        if (damageGroundMask.value != 0)
+        {
+            return;
+        }
+
+        int groundLayer = LayerMask.NameToLayer("Ground");
+        damageGroundMask = groundLayer >= 0 ? LayerMask.GetMask("Ground") : Physics.DefaultRaycastLayers;
+    }
+
+    private void ConfigurePatrolBounds()
+    {
+        float halfWidth = Mathf.Max(0.25f, fallbackPatrolHalfWidth);
+        leftPatrolDistance = -halfWidth;
+        rightPatrolDistance = halfWidth;
+        hasPatrolDestination = false;
+    }
+
+    private void NormalizeMovementPlane()
+    {
+        if (useTransformRightAsMovementAxis)
+        {
+            movementAxis = transform.right;
+        }
+
+        movementAxis = FlattenHorizontal(movementAxis);
+        depthAxis = FlattenHorizontal(Vector3.Cross(movementAxis, Vector3.up));
+        lockedDepth = Vector3.Dot(transform.position, depthAxis);
+    }
+
+    private void PickPatrolDestination()
+    {
+        float radius = Mathf.Max(0.25f, patrolRadius);
+        float minDistance = Mathf.Clamp(patrolDestinationMinDistance, 0f, radius);
+        Vector2 randomCircle = Random.insideUnitCircle.normalized * Random.Range(minDistance, radius);
+        if (randomCircle.sqrMagnitude < 0.0001f)
+        {
+            randomCircle = Vector2.right * radius;
+        }
+
+        patrolDestination = homePosition + new Vector3(randomCircle.x, 0f, randomCircle.y);
+        patrolDestination.y = transform.position.y;
+        hasPatrolDestination = true;
+    }
+
+    private void EnsureBodyCollider()
+    {
+        if (bodyCollider != null && bodyCollider.enabled && !bodyCollider.isTrigger)
+        {
+            return;
+        }
+
+        Collider[] colliders = GetComponentsInChildren<Collider>(true);
+        for (int i = 0; i < colliders.Length; i++)
+        {
+            Collider candidate = colliders[i];
+            if (candidate != null && candidate.enabled && !candidate.isTrigger)
+            {
+                bodyCollider = candidate;
+                return;
+            }
+        }
+    }
+
+    private bool HasPatrolObstacleAhead()
+    {
+        return HasPatrolObstacleAhead(movementAxis * direction);
+    }
+
+    private bool HasPatrolObstacleAhead(Vector3 moveDirection)
+    {
+        EnsureBodyCollider();
+        if (bodyCollider == null)
+        {
+            return false;
+        }
+
+        Bounds bounds = bodyCollider.bounds;
+        moveDirection = FlattenHorizontalOrZero(moveDirection);
+        if (moveDirection.sqrMagnitude < 0.0001f)
+        {
+            return false;
+        }
+
+        float forwardExtent = Mathf.Abs(bounds.extents.x * moveDirection.x)
+            + Mathf.Abs(bounds.extents.z * moveDirection.z);
+        float rayDistance = Mathf.Max(0.02f, patrolObstacleCheckDistance);
+        Vector3 baseOrigin = bounds.center + moveDirection * (forwardExtent + 0.02f);
+
+        return CastObstacleRay(baseOrigin, patrolObstacleRayHeights.x, rayDistance, moveDirection, bounds)
+            || CastObstacleRay(baseOrigin, patrolObstacleRayHeights.y, rayDistance, moveDirection, bounds)
+            || CastObstacleRay(baseOrigin, patrolObstacleRayHeights.z, rayDistance, moveDirection, bounds);
+    }
+
+    private bool CastObstacleRay(Vector3 baseOrigin, float heightRatio, float rayDistance, Vector3 moveDirection, Bounds bounds)
+    {
+        float clampedRatio = Mathf.Clamp01(heightRatio);
+        Vector3 origin = baseOrigin;
+        origin.y = Mathf.Lerp(bounds.min.y + 0.05f, bounds.max.y - 0.05f, clampedRatio);
+        int layerMask = usePatrolObstacleMask ? patrolObstacleMask.value : Physics.DefaultRaycastLayers;
+        int hitCount = Physics.RaycastNonAlloc(origin, moveDirection, obstacleHits, rayDistance, layerMask, QueryTriggerInteraction.Ignore);
+        for (int i = 0; i < hitCount; i++)
+        {
+            Collider hitCollider = obstacleHits[i].collider;
+            if (IsBlockingPatrolObstacle(hitCollider))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private bool IsBlockingPatrolObstacle(Collider hitCollider)
+    {
+        if (hitCollider == null || hitCollider.isTrigger || hitCollider.transform.IsChildOf(transform))
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    private bool IsTargetInsideDetectionBox(float axisRange, float boxHeight, float boxDepth)
+    {
+        if (target == null)
+        {
+            return false;
+        }
+
+        Vector3 center = GetDetectionBoxCenter();
+        Vector3 delta = target.position - center;
+        float halfHeight = Mathf.Max(0.01f, boxHeight * 0.5f);
+        if (UsesFree3DMovement)
+        {
+            return GetTargetHorizontalDistanceFrom(center) <= Mathf.Max(0.01f, axisRange)
+                && IsTargetWithinVerticalRange(center.y, halfHeight);
+        }
+
+        float halfAxis = Mathf.Max(0.01f, axisRange);
+        float halfDepth = Mathf.Max(0.01f, boxDepth * 0.5f);
+
+        return Mathf.Abs(Vector3.Dot(delta, movementAxis)) <= halfAxis
+            && Mathf.Abs(delta.y) <= halfHeight
+            && Mathf.Abs(Vector3.Dot(delta, depthAxis)) <= halfDepth;
+    }
+
+    private Vector3 GetDetectionBoxCenter()
+    {
+        if (UsesFree3DMovement)
+        {
+            Vector3 facing = GetFacingDirection();
+            Vector3 side = Vector3.Cross(Vector3.up, facing).normalized;
+            return transform.position
+                + facing * detectionBoxOffset.x
+                + Vector3.up * detectionBoxOffset.y
+                + side * detectionBoxOffset.z;
+        }
+
+        return transform.position
+            + movementAxis * detectionBoxOffset.x
+            + Vector3.up * detectionBoxOffset.y
+            + depthAxis * detectionBoxOffset.z;
+    }
+
+    private float GetPlanarDistanceTo(Vector3 worldPosition)
+    {
+        Vector3 delta = worldPosition - transform.position;
+        delta.y = 0f;
+        return delta.magnitude;
+    }
+
+    private float GetHorizontalDistanceTo(Vector3 worldPosition)
+    {
+        return UsesFree3DMovement ? GetPlanarDistanceTo(worldPosition) : Mathf.Abs(GetAxisDelta(worldPosition));
+    }
+
+    private float GetHorizontalDistanceToTarget()
+    {
+        return GetTargetHorizontalDistanceFrom(transform.position);
+    }
+
+    private float GetTargetHorizontalDistanceFrom(Vector3 origin)
+    {
+        if (TryGetClosestTargetBodyPoint(origin, out Vector3 closestPoint))
+        {
+            return UsesFree3DMovement ? GetPlanarDistanceBetween(origin, closestPoint) : Mathf.Abs(Vector3.Dot(closestPoint - origin, movementAxis));
+        }
+
+        return target != null ? GetHorizontalDistanceTo(target.position) : float.MaxValue;
+    }
+
+    private static float GetPlanarDistanceBetween(Vector3 a, Vector3 b)
+    {
+        Vector3 delta = b - a;
+        delta.y = 0f;
+        return delta.magnitude;
+    }
+
+    private Vector3 GetPlanarDirectionTo(Vector3 worldPosition)
+    {
+        return FlattenHorizontalOrZero(worldPosition - transform.position);
+    }
+
+    private Vector3 GetMoveDirectionToTarget()
+    {
+        if (target != null && TryGetClosestTargetBodyPoint(transform.position, out Vector3 closestPoint))
+        {
+            Vector3 direction = UsesFree3DMovement
+                ? FlattenHorizontalOrZero(closestPoint - transform.position)
+                : movementAxis * Mathf.Sign(Vector3.Dot(closestPoint - transform.position, movementAxis));
+            if (direction.sqrMagnitude > 0.0001f)
+            {
+                return direction;
+            }
+        }
+
+        return target != null ? GetMoveDirectionTo(target.position) : Vector3.zero;
+    }
+
+    private Vector3 GetMoveDirectionTo(Vector3 worldPosition)
+    {
+        if (UsesFree3DMovement)
+        {
+            return GetPlanarDirectionTo(worldPosition);
+        }
+
+        float axisDelta = GetAxisDelta(worldPosition);
+        if (Mathf.Abs(axisDelta) < 0.01f)
+        {
+            return Vector3.zero;
+        }
+
+        return movementAxis * Mathf.Sign(axisDelta);
+    }
+
+    private Vector3 GetFacingDirection()
+    {
+        if (UsesFree3DMovement)
+        {
+            Vector3 facing = FlattenHorizontalOrZero(transform.TransformDirection(Vector3.right));
+            return facing.sqrMagnitude > 0.0001f ? facing : movementAxis * direction;
+        }
+
+        return movementAxis * direction;
+    }
+
+    private bool IsTargetInMeleeStrikeRange()
+    {
+        return target != null
+            && GetHorizontalDistanceToTarget() <= attackRange
+            && IsTargetWithinVerticalRange(transform.position.y, meleeAttackHeight);
+    }
+
+    private bool IsTargetWithinVerticalRange(float centerY, float halfHeight)
+    {
+        float minY = centerY - Mathf.Max(0.01f, halfHeight);
+        float maxY = centerY + Mathf.Max(0.01f, halfHeight);
+        if (TryGetTargetBodyBounds(out Bounds bounds))
+        {
+            return bounds.max.y >= minY && bounds.min.y <= maxY;
+        }
+
+        return target != null && target.position.y >= minY && target.position.y <= maxY;
+    }
+
+    private bool TryGetClosestTargetBodyPoint(Vector3 origin, out Vector3 closestPoint)
+    {
+        closestPoint = default;
+        EnsureTargetBodyColliders();
+        bool found = false;
+        float closestDistance = float.MaxValue;
+        for (int i = 0; i < targetBodyColliders.Length; i++)
+        {
+            Collider targetCollider = targetBodyColliders[i];
+            if (!IsUsableTargetBodyCollider(targetCollider))
+            {
+                continue;
+            }
+
+            Vector3 point = targetCollider.ClosestPoint(origin);
+            float distance = (point - origin).sqrMagnitude;
+            if (distance < closestDistance)
+            {
+                closestDistance = distance;
+                closestPoint = point;
+                found = true;
+            }
+        }
+
+        return found;
+    }
+
+    private bool TryGetTargetBodyBounds(out Bounds bounds)
+    {
+        bounds = default;
+        EnsureTargetBodyColliders();
+        bool found = false;
+        for (int i = 0; i < targetBodyColliders.Length; i++)
+        {
+            Collider targetCollider = targetBodyColliders[i];
+            if (!IsUsableTargetBodyCollider(targetCollider))
+            {
+                continue;
+            }
+
+            if (!found)
+            {
+                bounds = targetCollider.bounds;
+                found = true;
+                continue;
+            }
+
+            bounds.Encapsulate(targetCollider.bounds);
+        }
+
+        return found;
+    }
+
+    private void EnsureTargetBodyColliders()
+    {
+        if (target == null)
+        {
+            cachedTargetColliderRoot = null;
+            targetBodyColliders = new Collider[0];
+            return;
+        }
+
+        if (cachedTargetColliderRoot == target && targetBodyColliders.Length > 0)
+        {
+            return;
+        }
+
+        cachedTargetColliderRoot = target;
+        Collider[] colliders = target.GetComponentsInChildren<Collider>(true);
+        List<Collider> usableColliders = new List<Collider>();
+        for (int i = 0; i < colliders.Length; i++)
+        {
+            Collider targetCollider = colliders[i];
+            if (IsUsableTargetBodyCollider(targetCollider))
+            {
+                usableColliders.Add(targetCollider);
+            }
+        }
+
+        targetBodyColliders = usableColliders.ToArray();
+    }
+
+    private bool IsUsableTargetBodyCollider(Collider targetCollider)
+    {
+        return targetCollider != null
+            && targetCollider.enabled
+            && !targetCollider.isTrigger
+            && !targetCollider.transform.IsChildOf(transform)
+            && targetCollider.GetComponentInParent<PlayerWeaponHitbox>() == null;
+    }
+
+    private float GetAxisDelta(Vector3 worldPosition)
+    {
+        return Vector3.Dot(worldPosition - transform.position, movementAxis);
+    }
+
+    private float GetAxisDeltaFromHome(Vector3 worldPosition)
+    {
+        return Vector3.Dot(worldPosition - homePosition, movementAxis);
+    }
+
+    private void SnapToMovementPlane()
+    {
+        if (UsesFree3DMovement || !lockDepthToMovementPlane)
+        {
+            return;
+        }
+
+        Vector3 position = body.position;
+        float depth = Vector3.Dot(position, depthAxis);
+        body.position = position + depthAxis * (lockedDepth - depth);
+    }
+
+    private void EnsureProjectileSpawn()
+    {
+        Transform preferredSpawn = FindChildByName(transform, "Shoot");
+        if (preferredSpawn != null)
+        {
+            projectileSpawn = preferredSpawn;
+            return;
+        }
+
+        if (projectileSpawn != null && projectileSpawn.name == "Shoot")
+        {
+            return;
+        }
+
+        projectileSpawn = FindChildByName(transform, "ProjectileSpawn");
+        bool createdSpawn = false;
+        if (projectileSpawn == null)
+        {
+            GameObject spawnObject = new GameObject("Shoot");
+            spawnObject.transform.SetParent(transform, false);
+            projectileSpawn = spawnObject.transform;
+            createdSpawn = true;
+        }
+
+        if (createdSpawn)
+        {
+            projectileSpawn.localPosition = projectileLocalOffset;
+            projectileSpawn.localRotation = Quaternion.identity;
+            projectileSpawn.localScale = Vector3.one;
+        }
+    }
+
+    private void EnsureProjectileVisualTemplate()
+    {
+        projectileVisualTemplate = null;
+        projectileVisualTemplates = null;
+        if (projectileSpawn == null)
+        {
+            return;
+        }
+
+        projectileVisualTemplates = FindTemplateChildren(projectileSpawn);
+        projectileVisualTemplate = projectileVisualTemplates.Length > 0 ? projectileVisualTemplates[0] : null;
+        if (projectileVisualTemplate != null)
+        {
+            for (int i = 0; i < projectileVisualTemplates.Length; i++)
+            {
+                if (projectileVisualTemplates[i] != null)
+                {
+                    projectileVisualTemplates[i].gameObject.SetActive(false);
+                }
+            }
+        }
+    }
+
+    private static Transform[] FindTemplateChildren(Transform root)
+    {
+        Transform[] children = new Transform[root.childCount];
+        int index = 0;
+        foreach (Transform child in root)
+        {
+            children[index] = child;
+            index++;
+        }
+
+        return children;
+    }
+
+    private static Transform FindChildByName(Transform root, string targetName)
+    {
+        foreach (Transform child in root)
+        {
+            if (child.name == targetName)
+            {
+                return child;
+            }
+
+            Transform match = FindChildByName(child, targetName);
+            if (match != null)
+            {
+                return match;
+            }
+        }
+
+        return null;
+    }
+
+    private void Move(float moveDirection, float speed)
+    {
+        Move(movementAxis * moveDirection, speed);
+    }
+
+    private void Move(Vector3 moveDirection, float speed)
+    {
+        moveDirection = FlattenHorizontalOrZero(moveDirection);
+        if (moveDirection.sqrMagnitude < 0.0001f)
+        {
+            StopMoving();
+            return;
+        }
+
+        direction = Vector3.Dot(moveDirection, movementAxis) >= 0f ? 1 : -1;
+        Face(moveDirection);
+
+        Vector3 velocity = body.linearVelocity;
+        velocity = UsesFree3DMovement ? RemoveHorizontalVelocity(velocity) : RemoveAxisVelocity(velocity, movementAxis);
+        velocity += moveDirection * speed;
+        body.linearVelocity = velocity;
+        SnapToMovementPlane();
+    }
+
+    private void StopMoving()
+    {
+        Vector3 velocity = body.linearVelocity;
+        velocity = UsesFree3DMovement ? RemoveHorizontalVelocity(velocity) : RemoveAxisVelocity(velocity, movementAxis);
+        body.linearVelocity = velocity;
+        SnapToMovementPlane();
+    }
+
+    private void TurnAround()
+    {
+        direction *= -1;
+        Face(direction);
+    }
+
+    private void Face(float faceDirection)
+    {
+        if (Mathf.Abs(faceDirection) < 0.01f)
+        {
+            return;
+        }
+
+        Face(movementAxis * faceDirection);
+    }
+
+    private void Face(Vector3 faceDirection)
+    {
+        faceDirection = FlattenHorizontalOrZero(faceDirection);
+        if (faceDirection.sqrMagnitude < 0.0001f)
+        {
+            return;
+        }
+
+        direction = Vector3.Dot(faceDirection, movementAxis) >= 0f ? 1 : -1;
+        if (UsesFree3DMovement)
+        {
+            transform.rotation = Quaternion.FromToRotation(Vector3.right, faceDirection) * spawnRotation;
+            return;
+        }
+
+        Vector3 scale = transform.localScale;
+        scale.x = Mathf.Abs(scale.x) * direction;
+        transform.localScale = scale;
+    }
+
+    private bool FaceTarget()
+    {
+        if (target == null)
+        {
+            return false;
+        }
+
+        Vector3 targetDirection = GetMoveDirectionToTarget();
+        if (targetDirection.sqrMagnitude < 0.0001f)
+        {
+            return false;
+        }
+
+        Face(targetDirection);
+        return true;
+    }
+
+    private void FindTarget()
+    {
+        PlayerMotor3D player = Object.FindFirstObjectByType<PlayerMotor3D>();
+        if (player != null)
+        {
+            target = player.transform;
+        }
+    }
+
+    private void Die()
+    {
+        if (deathSequenceStarted)
+        {
+            return;
+        }
+
+        deathSequenceStarted = true;
+        attackResolved = true;
+        visualAnimator?.SetCombatMode(false);
+
+        if (grounder != null)
+        {
+            grounder.enabled = false;
+        }
+
+        DisableDeathColliders();
+
+        if (launchAwayOnDeath && body != null)
+        {
+            body.isKinematic = false;
+            body.useGravity = true;
+            body.constraints = RigidbodyConstraints.None;
+            body.linearVelocity = GetDeathLaunchDirection() * deathLaunchSpeed + Vector3.up * deathLaunchUpSpeed;
+            body.angularVelocity = depthAxis * (deathSpinDegreesPerSecond * Mathf.Deg2Rad);
+        }
+
+        StartCoroutine(HandleDeathPerformanceAndRespawn());
+    }
+
+    private IEnumerator HandleDeathPerformanceAndRespawn()
+    {
+        yield return new WaitForSeconds(Mathf.Max(0.05f, deathDestroyDelay));
+
+        HideEnemyAfterDeath();
+        if (!respawnAfterCameraLeaves)
+        {
+#if UNITY_EDITOR
+            gameObject.SetActive(false);
+#else
+            Destroy(gameObject);
+#endif
+            yield break;
+        }
+
+        yield return WaitUntilSpawnPointLeavesCamera();
+        Respawn();
+    }
+
+    private IEnumerator WaitUntilSpawnPointLeavesCamera()
+    {
+        float awayTimer = 0f;
+        while (awayTimer < Mathf.Max(0.05f, respawnCameraAwaySeconds))
+        {
+            awayTimer = IsSpawnPointVisibleByCamera() ? 0f : awayTimer + Time.deltaTime;
+            yield return null;
+        }
+    }
+
+    private bool IsSpawnPointVisibleByCamera()
+    {
+        Camera targetCamera = Camera.main != null ? Camera.main : Object.FindFirstObjectByType<Camera>();
+        if (targetCamera == null)
+        {
+            return false;
+        }
+
+        Vector3 viewportPosition = targetCamera.WorldToViewportPoint(homePosition);
+        float padding = Mathf.Max(0f, respawnViewportPadding);
+        return viewportPosition.z > 0f
+            && viewportPosition.x >= -padding
+            && viewportPosition.x <= 1f + padding
+            && viewportPosition.y >= -padding
+            && viewportPosition.y <= 1f + padding;
+    }
+
+    private Vector3 GetDeathLaunchDirection()
+    {
+        if (target != null)
+        {
+            Vector3 awayFromTarget = UsesFree3DMovement
+                ? FlattenHorizontalOrZero(transform.position - target.position)
+                : -GetMoveDirectionTo(target.position);
+            if (awayFromTarget.sqrMagnitude > 0.0001f)
+            {
+                return awayFromTarget;
+            }
+        }
+
+        return -GetFacingDirection();
+    }
+
+    private void DisableDeathColliders()
+    {
+        deathDisabledColliders = GetComponentsInChildren<Collider>(true);
+        deathDisabledColliderStates = new bool[deathDisabledColliders.Length];
+        for (int i = 0; i < deathDisabledColliders.Length; i++)
+        {
+            Collider deathCollider = deathDisabledColliders[i];
+            if (deathCollider != null)
+            {
+                deathDisabledColliderStates[i] = deathCollider.enabled;
+                deathCollider.enabled = false;
+            }
+        }
+    }
+
+    private void HideEnemyAfterDeath()
+    {
+        deathHiddenRenderers = GetComponentsInChildren<Renderer>(true);
+        deathHiddenRendererStates = new bool[deathHiddenRenderers.Length];
+        for (int i = 0; i < deathHiddenRenderers.Length; i++)
+        {
+            Renderer renderer = deathHiddenRenderers[i];
+            if (renderer != null)
+            {
+                deathHiddenRendererStates[i] = renderer.enabled;
+                renderer.enabled = false;
+            }
+        }
+
+        if (body != null)
+        {
+            body.linearVelocity = Vector3.zero;
+            body.angularVelocity = Vector3.zero;
+            body.isKinematic = true;
+            body.useGravity = false;
+        }
+    }
+
+    private void Respawn()
+    {
+        transform.position = homePosition;
+        transform.rotation = spawnRotation;
+        transform.localScale = spawnScale;
+        direction = spawnDirection;
+        state = EnemyState.Patrol;
+        selectedBossProjectileIndex = -1;
+        ResetRangedAttackRhythm();
+        attackResolved = true;
+        nextAttackTime = Time.time + 0.25f;
+        attackResolveTime = 0f;
+        attackEndTime = 0f;
+        deathSequenceStarted = false;
+        damageKnockbackLockedUntil = 0f;
+        damageLandingRecoveryUntil = 0f;
+        damageGroundContactUntil = 0f;
+        waitingForDamageLanding = false;
+        RestoreGrounderAfterDamage();
+        visualAnimator?.ResumeHit();
+
+        if (body != null)
+        {
+            body.isKinematic = aliveIsKinematic;
+            body.useGravity = aliveUseGravity;
+            body.constraints = aliveConstraints;
+            body.position = homePosition;
+            body.rotation = spawnRotation;
+            body.linearVelocity = Vector3.zero;
+            body.angularVelocity = Vector3.zero;
+        }
+
+        RestoreDeathRenderers();
+        RestoreDeathColliders();
+
+        if (grounder != null)
+        {
+            grounder.enabled = true;
+        }
+
+        NormalizeMovementPlane();
+        health?.ReviveFull();
+        FindTarget();
+        visualAnimator?.SetCombatMode(false);
+    }
+
+    private void RestoreDeathRenderers()
+    {
+        if (deathHiddenRenderers == null || deathHiddenRendererStates == null)
+        {
+            return;
+        }
+
+        for (int i = 0; i < deathHiddenRenderers.Length && i < deathHiddenRendererStates.Length; i++)
+        {
+            if (deathHiddenRenderers[i] != null)
+            {
+                deathHiddenRenderers[i].enabled = deathHiddenRendererStates[i];
+            }
+        }
+    }
+
+    private void RestoreDeathColliders()
+    {
+        if (deathDisabledColliders == null || deathDisabledColliderStates == null)
+        {
+            return;
+        }
+
+        for (int i = 0; i < deathDisabledColliders.Length && i < deathDisabledColliderStates.Length; i++)
+        {
+            if (deathDisabledColliders[i] != null)
+            {
+                deathDisabledColliders[i].enabled = deathDisabledColliderStates[i];
+            }
+        }
+    }
+
+    private void OnDrawGizmos()
+    {
+        if (!onlyShowDetectionBoxWhenSelected)
+        {
+            DrawDetectionBoxGizmo();
+        }
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        if (onlyShowDetectionBoxWhenSelected)
+        {
+            DrawDetectionBoxGizmo();
+        }
+
+        DrawAttackGizmo();
+    }
+
+    private void DrawDetectionBoxGizmo()
+    {
+        if (!showDetectionBoxGizmo)
+        {
+            return;
+        }
+
+        Vector3 gizmoMovementAxis = useTransformRightAsMovementAxis ? transform.right : movementAxis;
+        gizmoMovementAxis = FlattenHorizontal(gizmoMovementAxis);
+        Vector3 gizmoDepthAxis = FlattenHorizontal(Vector3.Cross(gizmoMovementAxis, Vector3.up));
+        Vector3 detectionCenter = transform.position
+            + gizmoMovementAxis * detectionBoxOffset.x
+            + Vector3.up * detectionBoxOffset.y
+            + gizmoDepthAxis * detectionBoxOffset.z;
+
+        if (movementMode == MovementMode.Free3D)
+        {
+            Vector3 gizmoHomePosition = Application.isPlaying ? homePosition : transform.position;
+            detectionCenter = GetDetectionBoxCenter();
+            Gizmos.color = new Color(1f, 0.85f, 0f, 0.12f);
+            Gizmos.DrawSphere(detectionCenter, searchRange);
+            Gizmos.color = new Color(1f, 0.85f, 0f, 0.75f);
+            Gizmos.DrawWireSphere(detectionCenter, searchRange);
+            Gizmos.color = new Color(0.2f, 1f, 0.6f, 0.75f);
+            Gizmos.DrawWireSphere(gizmoHomePosition, Mathf.Max(0.25f, patrolRadius));
+            return;
+        }
+
+        Vector3 detectionSize = new Vector3(searchRange * 2f, detectionBoxHeight, detectionBoxDepth);
+        Gizmos.matrix = Matrix4x4.TRS(detectionCenter, Quaternion.LookRotation(gizmoDepthAxis, Vector3.up), Vector3.one);
+        Gizmos.color = new Color(1f, 0.85f, 0f, 0.08f);
+        Gizmos.DrawCube(Vector3.zero, detectionSize);
+        Gizmos.color = new Color(1f, 0.85f, 0f, 0.75f);
+        Gizmos.DrawWireCube(Vector3.zero, detectionSize);
+        Gizmos.matrix = Matrix4x4.identity;
+    }
+
+    private void DrawAttackGizmo()
+    {
+        Gizmos.color = attackMode == AttackMode.Ranged
+            ? new Color(0.2f, 0.7f, 1f, 0.5f)
+            : new Color(1f, 0.1f, 0.05f, 0.45f);
+
+        if (attackMode == AttackMode.Ranged)
+        {
+            if (movementMode == MovementMode.Free3D)
+            {
+                Gizmos.DrawWireSphere(transform.position, searchRange);
+            }
+            else
+            {
+                Vector3 gizmoHomePosition = Application.isPlaying ? homePosition : transform.position;
+                Vector3 left = gizmoHomePosition + movementAxis * leftPatrolDistance;
+                Vector3 right = gizmoHomePosition + movementAxis * rightPatrolDistance;
+                Gizmos.DrawLine(left, right);
+            }
+        }
+        else
+        {
+            if (movementMode == MovementMode.Free3D)
+            {
+                Gizmos.DrawWireSphere(transform.position, attackRange);
+                return;
+            }
+
+            Gizmos.matrix = Matrix4x4.TRS(transform.position + movementAxis * direction * attackRange * 0.5f, Quaternion.LookRotation(depthAxis, Vector3.up), Vector3.one);
+            Gizmos.DrawWireCube(Vector3.zero, new Vector3(attackRange, meleeAttackHeight * 2f, 1f));
+            Gizmos.matrix = Matrix4x4.identity;
+        }
+    }
+
+    private static Vector3 FlattenHorizontal(Vector3 value)
+    {
+        value.y = 0f;
+        if (value.sqrMagnitude < 0.0001f)
+        {
+            return Vector3.right;
+        }
+
+        return value.normalized;
+    }
+
+    private static Vector3 FlattenHorizontalOrZero(Vector3 value)
+    {
+        value.y = 0f;
+        if (value.sqrMagnitude < 0.0001f)
+        {
+            return Vector3.zero;
+        }
+
+        return value.normalized;
+    }
+
+    private static Vector3 RemoveAxisVelocity(Vector3 velocity, Vector3 axis)
+    {
+        return velocity - axis * Vector3.Dot(velocity, axis);
+    }
+
+    private static Vector3 RemoveHorizontalVelocity(Vector3 velocity)
+    {
+        velocity.x = 0f;
+        velocity.z = 0f;
+        return velocity;
+    }
+}

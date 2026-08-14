@@ -1,0 +1,36 @@
+{
+  "sections": [
+    { "key": "attackBehavior", "text": "\u653b\u64ca\u884c\u70ba" },
+    { "key": "targets", "text": "\u653b\u64ca\u76ee\u6a19" },
+    { "key": "comboAttacks", "text": "\u9023\u6bb5\u653b\u64ca" },
+    { "key": "hitAudio", "text": "\u6253\u64ca\u97f3\u6548" }
+  ],
+  "labels": [
+    { "key": "PlayerWeaponAttackProfile.attackCooldown", "text": "\u653b\u64ca\u51b7\u537b\u6642\u9593" },
+    { "key": "PlayerWeaponAttackProfile.attackMoveLockSeconds", "text": "\u653b\u64ca\u79fb\u52d5\u9396\u5b9a\u79d2\u6578" },
+    { "key": "PlayerWeaponAttackProfile.useAttackAnimationLength", "text": "\u4f7f\u7528\u653b\u64ca\u52d5\u756b\u9577\u5ea6" },
+    { "key": "PlayerWeaponAttackProfile.attackSpeedMultiplier", "text": "\u653b\u64ca\u52d5\u756b\u901f\u5ea6\u500d\u7387" },
+    { "key": "PlayerWeaponAttackProfile.attackCrossFadeSeconds", "text": "\u653b\u64ca\u52d5\u756b\u878d\u5408\u79d2\u6578" },
+    { "key": "PlayerWeaponAttackProfile.allowAirAttacks", "text": "\u5141\u8a31\u7a7a\u4e2d\u653b\u64ca" },
+    { "key": "PlayerWeaponAttackProfile.targetMask", "text": "\u53ef\u653b\u64ca\u76ee\u6a19\u5716\u5c64" },
+    { "key": "PlayerWeaponAttackProfile.attacks", "text": "\u653b\u64ca\u6bb5\u6578\u8a2d\u5b9a" },
+    { "key": "PlayerWeaponAttackProfile.attacksSize", "text": "\u653b\u64ca\u6bb5\u6578" },
+    { "key": "PlayerWeaponAttackProfile.attackHitSound", "text": "\u9810\u8a2d\u547d\u4e2d\u97f3\u6548" },
+    { "key": "PlayerWeaponAttackProfile.attackHitSoundVolume", "text": "\u9810\u8a2d\u547d\u4e2d\u97f3\u91cf" },
+    { "key": "PlayerWeaponAttackProfile.targetHitSounds", "text": "\u76ee\u6a19\u547d\u4e2d\u97f3\u6548\u898f\u5247" },
+    { "key": "PlayerWeaponAttackStep.step", "text": "\u653b\u64ca" },
+    { "key": "PlayerWeaponAttackStep.animatorStateName", "text": "Animator \u72c0\u614b\u540d\u7a31" },
+    { "key": "PlayerWeaponAttackStep.animationClip", "text": "\u653b\u64ca\u52d5\u756b" },
+    { "key": "PlayerWeaponAttackStep.triggerName", "text": "\u9023\u6bb5\u89f8\u767c Trigger" },
+    { "key": "PlayerWeaponAttackStep.damage", "text": "\u653b\u64ca\u50b7\u5bb3" },
+    { "key": "PlayerWeaponAttackStep.nextInputWindowSeconds", "text": "\u4e0b\u4e00\u6bb5\u8f38\u5165\u6642\u9593\u7a97" },
+    { "key": "PlayerWeaponAttackStep.nextAttackStartFrame", "text": "\u4e0b\u4e00\u6bb5\u5207\u63db\u5e40" },
+    { "key": "PlayerWeaponAttackStep.attackEffectRoot", "text": "\u653b\u64ca\u7279\u6548\u6839\u7269\u4ef6" },
+    { "key": "PlayerWeaponAttackStep.cameraShakeAmplitude", "text": "\u547d\u4e2d\u9707\u52d5\u5f37\u5ea6" },
+    { "key": "PlayerWeaponAttackStep.cameraShakeDuration", "text": "\u547d\u4e2d\u9707\u52d5\u6642\u9593" },
+    { "key": "PlayerWeaponAttackStep.cameraShakeFrequency", "text": "\u547d\u4e2d\u9707\u52d5\u983b\u7387" }
+  ],
+  "tooltips": [
+    { "key": "PlayerWeaponAttackStep.attackEffectRoot", "text": "\u9019\u4e00\u6bb5\u653b\u64ca\u958b\u59cb\u6642\u64ad\u653e\u7684\u7279\u6548\u3002\u7559\u7a7a\u6642\u4e0d\u64ad\u653e\u7279\u6548\u3002" }
+  ]
+}

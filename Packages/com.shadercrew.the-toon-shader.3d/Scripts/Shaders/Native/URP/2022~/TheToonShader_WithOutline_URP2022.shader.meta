@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: bc97b42f0416e4147b3917bc938d658e
+ShaderImporter:
+  externalObjects: {}
+  defaultTextures: []
+  nonModifiableTextures: []
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 269238
+  packageName: The Toon Shader
+  packageVersion: 1.4.3
+  assetPath: Packages/com.shadercrew.the-toon-shader.3d/Scripts/Shaders/Native/URP/2022/TheToonShader_WithOutline_URP2022.shader
+  uploadId: 937428
