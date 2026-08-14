@@ -263,8 +263,10 @@ public class EnemyPatrol3D : MonoBehaviour
     [SerializeField] private float attackCooldown = 1.25f;
     [Tooltip("When enabled, projectile attacks use Ranged Attack Rhythm instead of the fixed Attack Cooldown.")]
     [SerializeField] private bool useRangedAttackRhythm;
-    [Tooltip("Projectile attack intervals in seconds. Each value is used after one projectile attack, then the pattern loops.")]
+    [Tooltip("Projectile attack intervals inside one group. The first value is the delay before the first projectile, then each following value delays the next projectile in the group.")]
     [SerializeField] private float[] rangedAttackRhythm = { 1.25f };
+    [Tooltip("Extra cooldown after one full ranged attack rhythm group finishes before the rhythm starts again.")]
+    [SerializeField] private float rangedAttackGroupCooldown;
     [Tooltip("\u958b\u59cb\u653b\u64ca\u5f8c\uff0c\u5ef6\u9072\u5e7e\u79d2\u624d\u771f\u6b63\u9020\u6210\u50b7\u5bb3\u6216\u5c04\u51fa\u706b\u7403\u3002")]
     [SerializeField] private float attackWindup = 0.25f;
     [Tooltip("\u653b\u64ca\u52d5\u4f5c\u671f\u9593\u6575\u4eba\u4e0d\u80fd\u79fb\u52d5\u7684\u79d2\u6578\u3002")]
@@ -341,7 +343,10 @@ public class EnemyPatrol3D : MonoBehaviour
     private float attackEndTime;
     private bool attackResolved = true;
     private bool currentAttackUsesRanged;
+    private float queuedRangedAttackInterval = -1f;
     private int rangedAttackRhythmIndex;
+    private bool rangedAttackRhythmInitialDelayScheduled;
+    private bool rangedAttackGroupPlaybackActive;
     private bool deathSequenceStarted;
     private int selectedBossProjectileIndex = -1;
     private Collider[] deathDisabledColliders;
@@ -540,6 +545,11 @@ public class EnemyPatrol3D : MonoBehaviour
             return;
         }
 
+        if (state == EnemyState.Attack && IsRangedAttackGroupPlaybackInProgress())
+        {
+            return;
+        }
+
         bool canNoticeTarget = IsTargetInsideDetectionBox(searchRange, detectionBoxHeight, detectionBoxDepth);
         bool shouldGiveUp = !IsTargetInsideDetectionBox(giveUpRange, detectionBoxHeight + giveUpBoxPadding, detectionBoxDepth + giveUpBoxPadding);
         bool targetInAttackRange = IsTargetInAttackRange();
@@ -653,12 +663,14 @@ public class EnemyPatrol3D : MonoBehaviour
         StopMoving();
 
         FaceTarget();
+        ScheduleInitialRangedAttackDelayIfNeeded();
 
         if (!attackResolved && Time.time >= attackResolveTime)
         {
             if (currentAttackUsesRanged)
             {
                 FireProjectile();
+                ScheduleNextRangedAttackFromProjectileTime();
             }
             else
             {
@@ -672,8 +684,8 @@ public class EnemyPatrol3D : MonoBehaviour
         {
             FaceTarget();
             visualAnimator = visualAnimator != null ? visualAnimator : GetComponent<EnemyVisualAnimator>();
-            currentAttackUsesRanged = ShouldUseRangedAttackNow();
-            float cooldown = currentAttackUsesRanged ? GetNextRangedAttackInterval() : attackCooldown;
+            currentAttackUsesRanged = IsRangedAttackGroupPlaybackInProgress() || ShouldUseRangedAttackNow();
+            float cooldown = currentAttackUsesRanged ? ConsumeQueuedRangedAttackInterval() : attackCooldown;
             float attackAnimationLength = visualAnimator != null ? visualAnimator.GetAttackAnimationLength() : 0f;
             float attackSpeedMultiplier = GetAttackSpeedMultiplier(currentAttackUsesRanged, cooldown, attackAnimationLength);
             float animationLockSeconds = GetScaledAttackTime(attackAnimationLength, attackSpeedMultiplier);
@@ -687,7 +699,14 @@ public class EnemyPatrol3D : MonoBehaviour
             attackResolved = false;
             attackResolveTime = Time.time + windupSeconds;
             attackEndTime = Time.time + lockSeconds;
-            nextAttackTime = Time.time + GetNextAttackInterval(currentAttackUsesRanged, cooldown, lockSeconds);
+            if (currentAttackUsesRanged && useRangedAttackRhythm)
+            {
+                nextAttackTime = float.PositiveInfinity;
+            }
+            else
+            {
+                nextAttackTime = Time.time + GetNextAttackInterval(currentAttackUsesRanged, cooldown, lockSeconds);
+            }
         }
 
         StopMoving();
@@ -793,6 +812,90 @@ public class EnemyPatrol3D : MonoBehaviour
         selectedBossProjectileIndex = -1;
     }
 
+    private float ConsumeQueuedRangedAttackInterval()
+    {
+        if (!useRangedAttackRhythm)
+        {
+            return attackCooldown;
+        }
+
+        if (queuedRangedAttackInterval > 0f)
+        {
+            float interval = queuedRangedAttackInterval;
+            queuedRangedAttackInterval = -1f;
+            return interval;
+        }
+
+        return PeekNextRangedAttackInterval();
+    }
+
+    private void ScheduleInitialRangedAttackDelayIfNeeded()
+    {
+        if (rangedAttackRhythmInitialDelayScheduled
+            || !useRangedAttackRhythm
+            || !UsesProjectileAttack()
+            || !ShouldUseRangedAttackNow())
+        {
+            return;
+        }
+
+        float interval = GetNextRangedAttackInterval();
+        queuedRangedAttackInterval = interval;
+        visualAnimator = visualAnimator != null ? visualAnimator : GetComponent<EnemyVisualAnimator>();
+        float attackAnimationLength = visualAnimator != null ? visualAnimator.GetAttackAnimationLength() : 0f;
+        float attackSpeedMultiplier = GetAttackSpeedMultiplier(true, interval, attackAnimationLength);
+        float windupSeconds = GetScaledAttackTime(attackWindup, attackSpeedMultiplier);
+        nextAttackTime = Time.time + Mathf.Max(0.01f, interval - windupSeconds);
+        rangedAttackRhythmInitialDelayScheduled = true;
+        rangedAttackGroupPlaybackActive = true;
+    }
+
+    private void ScheduleNextRangedAttackFromProjectileTime()
+    {
+        if (!useRangedAttackRhythm)
+        {
+            return;
+        }
+
+        bool currentShotFinishedGroup = IsRangedAttackRhythmAtGroupStart();
+        float groupCooldown = currentShotFinishedGroup
+            ? Mathf.Max(0f, rangedAttackGroupCooldown)
+            : 0f;
+        float interval = GetNextRangedAttackInterval();
+        queuedRangedAttackInterval = interval;
+        visualAnimator = visualAnimator != null ? visualAnimator : GetComponent<EnemyVisualAnimator>();
+        float attackAnimationLength = visualAnimator != null ? visualAnimator.GetAttackAnimationLength() : 0f;
+        float attackSpeedMultiplier = GetAttackSpeedMultiplier(true, interval, attackAnimationLength);
+        float windupSeconds = GetScaledAttackTime(attackWindup, attackSpeedMultiplier);
+        nextAttackTime = Time.time + groupCooldown + Mathf.Max(0.01f, interval - windupSeconds);
+        rangedAttackGroupPlaybackActive = !currentShotFinishedGroup;
+    }
+
+    private float PeekNextRangedAttackInterval()
+    {
+        if (!useRangedAttackRhythm || rangedAttackRhythm == null || rangedAttackRhythm.Length == 0)
+        {
+            return attackCooldown;
+        }
+
+        if (rangedAttackRhythmIndex < 0 || rangedAttackRhythmIndex >= rangedAttackRhythm.Length)
+        {
+            rangedAttackRhythmIndex = 0;
+        }
+
+        for (int i = 0; i < rangedAttackRhythm.Length; i++)
+        {
+            int index = (rangedAttackRhythmIndex + i) % rangedAttackRhythm.Length;
+            float interval = rangedAttackRhythm[index];
+            if (interval > 0f)
+            {
+                return interval;
+            }
+        }
+
+        return attackCooldown;
+    }
+
     private float GetNextRangedAttackInterval()
     {
         if (!useRangedAttackRhythm || rangedAttackRhythm == null || rangedAttackRhythm.Length == 0)
@@ -823,11 +926,38 @@ public class EnemyPatrol3D : MonoBehaviour
     private void ResetRangedAttackRhythm()
     {
         rangedAttackRhythmIndex = 0;
+        queuedRangedAttackInterval = -1f;
         currentAttackUsesRanged = false;
+        rangedAttackRhythmInitialDelayScheduled = false;
+        rangedAttackGroupPlaybackActive = false;
+    }
+
+    private bool IsRangedAttackRhythmAtGroupStart()
+    {
+        if (!rangedAttackRhythmInitialDelayScheduled)
+        {
+            return false;
+        }
+
+        if (rangedAttackRhythm == null || rangedAttackRhythm.Length == 0)
+        {
+            return true;
+        }
+
+        return rangedAttackRhythmIndex == 0;
+    }
+
+    private bool IsRangedAttackGroupPlaybackInProgress()
+    {
+        return useRangedAttackRhythm
+            && UsesProjectileAttack()
+            && (rangedAttackGroupPlaybackActive || (currentAttackUsesRanged && !attackResolved));
     }
 
     private void ValidateRangedAttackRhythm()
     {
+        rangedAttackGroupCooldown = Mathf.Max(0f, rangedAttackGroupCooldown);
+
         if (rangedAttackRhythm == null)
         {
             return;

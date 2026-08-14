@@ -130,6 +130,7 @@ public class GameBalanceSettings3DEditor : Editor
         "attackCooldown",
         "useRangedAttackRhythm",
         "rangedAttackRhythm",
+        "rangedAttackGroupCooldown",
         "attackWindup",
         "attackLockSeconds",
         "launchAwayOnDeath",
@@ -1512,7 +1513,7 @@ public class GameBalanceSettings3DEditor : Editor
             new NestedSection("enemy.ranged", "\u9060\u7a0b\u653b\u64ca", false, new[] { "projectileDamage", "projectileSpeed", "projectileLifetime", "projectileHitSoundVolume", "projectileLocalOffset", "returnSpeed" }),
             new NestedSection("enemy.bossContact", "Boss \u63a5\u89f8\u50b7\u5bb3", false, new[] { "bossContactDamageEnabled", "bossContactDamage", "bossContactDamageCooldown", "bossContactDamageBoxSize", "bossContactDamageBoxCenter", "bossContactDamageTargetMask" }),
             new NestedSection("enemy.bossRanged", "Boss \u9060\u7a0b\u653b\u64ca", false, new[] { "bossRangedDistance", "bossRangedDistanceTolerance" }),
-            new NestedSection("enemy.attackTiming", "\u653b\u64ca\u6642\u6a5f", false, new[] { "attackCooldown", "useRangedAttackRhythm", "rangedAttackRhythm", "attackWindup", "attackLockSeconds" }),
+            new NestedSection("enemy.attackTiming", "\u653b\u64ca\u6642\u6a5f", false, new[] { "attackCooldown", "useRangedAttackRhythm", "rangedAttackRhythm", "rangedAttackGroupCooldown", "attackWindup", "attackLockSeconds" }),
             new NestedSection("enemy.hitEffect", "\u53d7\u64ca\u7279\u6548", false, new[] { "hitEffect" }),
             new NestedSection("enemy.death", "\u6b7b\u4ea1", false, new[] { "launchAwayOnDeath", "deathLaunchSpeed", "deathLaunchUpSpeed", "deathSpinDegreesPerSecond", "deathDestroyDelay" }),
             new NestedSection("enemy.damageKnockback", "\u53d7\u50b7\u64ca\u9000", false, new[] { "knockbackOnDamage", "damageKnockbackForce", "damageKnockbackLockSeconds", "airborneHitPauseNormalizedTime", "damageLandingRecoverySeconds", "damageGroundCheckDistance", "damageGroundMask" }),
@@ -1759,7 +1760,8 @@ public class GameBalanceSettings3DEditor : Editor
             case "nextAttackStartFrame": return "\u4e0b\u4e00\u6bb5\u5207\u63db\u5e40";
             case "attackEffectRoot": return "\u653b\u64ca\u7279\u6548\u6839\u7269\u4ef6";
             case "useRangedAttackRhythm": return "\u4f7f\u7528\u9060\u7a0b\u653b\u64ca\u7bc0\u594f";
-            case "rangedAttackRhythm": return "\u9060\u7a0b\u653b\u64ca\u7bc0\u594f";
+            case "rangedAttackRhythm": return "\u653b\u64ca\u7bc0\u594f";
+            case "rangedAttackGroupCooldown": return "\u6bcf\u7d44\u653b\u64caCD\u6642\u9593";
             case "cameraShakeAmplitude": return "\u547d\u4e2d\u9707\u52d5\u5f37\u5ea6";
             case "cameraShakeDuration": return "\u547d\u4e2d\u9707\u52d5\u6642\u9593";
             case "cameraShakeFrequency": return "\u547d\u4e2d\u9707\u52d5\u983b\u7387";

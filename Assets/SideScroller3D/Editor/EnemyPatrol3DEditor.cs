@@ -90,11 +90,10 @@ public class EnemyPatrol3DEditor : Editor
                     "projectileLifetime",
                     "projectileHitSound",
                     "projectileHitSoundVolume",
+                    "useRangedAttackRhythm",
+                    "rangedAttackRhythm",
                     "projectileLocalOffset",
                     "returnSpeed");
-                DrawSection("Ranged Rhythm",
-                    "useRangedAttackRhythm",
-                    "rangedAttackRhythm");
                 break;
 
             case EnemyPatrol3D.AttackMode.Boss:
@@ -119,11 +118,10 @@ public class EnemyPatrol3DEditor : Editor
                     "returnSpeed",
                     "projectileHitSound",
                     "projectileHitSoundVolume",
+                    "useRangedAttackRhythm",
+                    "rangedAttackRhythm",
                     "bossRangedDistance",
                     "bossRangedDistanceTolerance");
-                DrawSection("Ranged Rhythm",
-                    "useRangedAttackRhythm",
-                    "rangedAttackRhythm");
                 DrawBossProjectileTypes();
                 break;
         }
@@ -284,6 +282,22 @@ public class EnemyPatrol3DEditor : Editor
         EditorGUI.indentLevel++;
         for (int i = 0; i < propertyNames.Length; i++)
         {
+            if (propertyNames[i] == "useRangedAttackRhythm")
+            {
+                DrawRangedAttackRhythmSettings();
+                continue;
+            }
+
+            if (propertyNames[i] == "rangedAttackRhythm")
+            {
+                continue;
+            }
+
+            if (propertyNames[i] == "rangedAttackGroupCooldown")
+            {
+                continue;
+            }
+
             SerializedProperty property = serializedObject.FindProperty(propertyNames[i]);
             if (property == null)
             {
@@ -298,6 +312,48 @@ public class EnemyPatrol3DEditor : Editor
         }
 
         EditorGUI.indentLevel--;
+    }
+
+    private void DrawRangedAttackRhythmSettings()
+    {
+        SerializedProperty useRhythm = serializedObject.FindProperty("useRangedAttackRhythm");
+        SerializedProperty rhythm = serializedObject.FindProperty("rangedAttackRhythm");
+        if (useRhythm == null)
+        {
+            return;
+        }
+
+        SerializedProperty groupCooldown = serializedObject.FindProperty("rangedAttackGroupCooldown");
+        GUIContent useRhythmLabel = SideScrollerInspectorLabels.Content(
+            "EnemyPatrol3D",
+            "useRangedAttackRhythm",
+            ObjectNames.NicifyVariableName("useRangedAttackRhythm"));
+        GUIContent rhythmLabel = SideScrollerInspectorLabels.Content(
+            "EnemyPatrol3D",
+            "rangedAttackRhythm",
+            ObjectNames.NicifyVariableName("rangedAttackRhythm"));
+
+        EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+        EditorGUILayout.PropertyField(useRhythm, useRhythmLabel, true);
+
+        if (useRhythm.boolValue || useRhythm.hasMultipleDifferentValues)
+        {
+            if (groupCooldown != null)
+            {
+                GUIContent groupLabel = SideScrollerInspectorLabels.Content(
+                    "EnemyPatrol3D",
+                    "rangedAttackGroupCooldown",
+                    ObjectNames.NicifyVariableName("rangedAttackGroupCooldown"));
+                EditorGUILayout.PropertyField(groupCooldown, groupLabel, true);
+            }
+
+            if (rhythm != null)
+            {
+                EditorGUILayout.PropertyField(rhythm, rhythmLabel, true);
+            }
+        }
+
+        EditorGUILayout.EndVertical();
     }
 
     private bool DrawFoldoutHeader(string title, bool defaultExpanded)

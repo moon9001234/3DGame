@@ -218,6 +218,7 @@ public class GameBalanceSettings3D : MonoBehaviour
         public float attackCooldown = 1.25f;
         public bool useRangedAttackRhythm;
         public float[] rangedAttackRhythm = { 1.25f };
+        public float rangedAttackGroupCooldown;
         public float attackWindup = 0.25f;
         public float attackLockSeconds = 0.55f;
 
