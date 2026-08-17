@@ -356,6 +356,8 @@ MonoBehaviour:
   worldOffset: {x: 0, y: 1.55, z: -0.08}
   size: {x: 1.35, y: 0.12}
   depth: 0.04
+  cellWidth: 0.24
+  cellSpacing: 0.025
   hideWhenFull: 0
   facingCamera: {fileID: 0}
 --- !u!114 &4413695367977414411
@@ -385,6 +387,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cdd98302eea0faf41b9ba5050983c148, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyVisualAnimator
+  sideScrollerAnimatorController: {fileID: 9100000, guid: 0cd88a46f3db62b4eb2bab5de283394a, type: 2}
+  free3DAnimatorController: {fileID: 9100000, guid: f0cf9d7b58fc4a7c9a2deced9d76c8fa, type: 2}
 --- !u!114 &512688245906072609
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -398,14 +402,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyPatrol3D
   attackMode: 1
-  movementMode: 0
+  movementMode: 1
   useTransformRightAsMovementAxis: 1
   movementAxis: {x: 1, y: 0, z: 0}
   lockDepthToMovementPlane: 1
   moveSpeed: 2
-  patrolMoveSpeed: 1.6
+  patrolMoveSpeed: 1
   homeStopDistance: 0.12
-  fallbackPatrolHalfWidth: 2
+  fallbackPatrolHalfWidth: 1.5
   patrolRadius: 3
   patrolDestinationReachDistance: 0.25
   patrolDestinationMinDistance: 1
@@ -428,13 +432,13 @@ MonoBehaviour:
   attackDamage: 1
   meleeHitSound: {fileID: 8300000, guid: 8fe21a255ac34044c87091eeaafe7dd4, type: 3}
   meleeHitSoundVolume: 1
-  projectileDamage: 2
-  projectileSpeed: 7
-  projectileLifetime: 3
+  projectileDamage: 1
+  projectileSpeed: 3
+  projectileLifetime: 5
   projectileHitSound: {fileID: 8300000, guid: 7f1e92757eaaa1343bbcc3a93558868b, type: 3}
-  projectileHitSoundVolume: 0.3
-  projectileLocalOffset: {x: 0.65, y: 0.95, z: 0}
-  returnSpeed: 1.8
+  projectileHitSoundVolume: 0.1
+  projectileLocalOffset: {x: 0.65, y: 0.95, z: 0.2}
+  returnSpeed: 0
   bossRangedDistance: 4.5
   bossRangedDistanceTolerance: 0.35
   bossContactDamageEnabled: 1
@@ -465,6 +469,12 @@ MonoBehaviour:
     hitSound: {fileID: 0}
     hitSoundVolume: 1
   attackCooldown: 1.6
+  useRangedAttackRhythm: 1
+  rangedAttackRhythm:
+  - 0.2
+  - 0.2
+  - 1
+  rangedAttackGroupCooldown: 5
   attackWindup: 0.35
   attackLockSeconds: 0.7
   launchAwayOnDeath: 1
@@ -472,8 +482,8 @@ MonoBehaviour:
   deathLaunchUpSpeed: 20
   deathSpinDegreesPerSecond: 1080
   deathDestroyDelay: 1.25
-  knockbackOnDamage: 1
-  damageKnockbackForce: {x: 3.2, y: 1.8}
+  knockbackOnDamage: 0
+  damageKnockbackForce: {x: 5, y: 2}
   damageKnockbackLockSeconds: 0.18
   airborneHitPauseNormalizedTime: 0.5
   damageLandingRecoverySeconds: 0.5
@@ -496,7 +506,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 590422e32da767f418b326f41ebcc1b4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DamageHitEffect3D
-  effectPrefab: {fileID: 2564836553835997603, guid: 365f64551a19c4649a2e456d0774edfe, type: 3}
+  effectPrefab: {fileID: 0}
   effectAnchor: {fileID: 5204677169972842351}
   effectAnchorName: EF_Hit
   stopEffectOnAwake: 1
@@ -589,7 +599,8 @@ PrefabInstance:
       value: Enemy_Model
       objectReference: {fileID: 0}
     m_RemovedComponents: []
-    m_RemovedGameObjects: []
+    m_RemovedGameObjects:
+    - {fileID: 9072178020324138840, guid: 0985905d094951a41bb12235e9143f20, type: 3}
     m_AddedGameObjects:
     - targetCorrespondingSourceObject: {fileID: 4952316856920300782, guid: 0985905d094951a41bb12235e9143f20, type: 3}
       insertIndex: -1

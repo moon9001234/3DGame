@@ -199,17 +199,19 @@ public class ReflectableProjectile3D : MonoBehaviour
             return;
         }
 
-        if (!reflected && targetHealth.GetComponent<PlayerMotor3D>() == null)
+        bool targetIsPlayer = targetHealth.GetComponent<PlayerMotor3D>() != null;
+        if (!reflected && !targetIsPlayer)
         {
             return;
         }
 
-        if (reflected && targetHealth.GetComponent<PlayerMotor3D>() != null)
+        if (reflected && targetIsPlayer)
         {
             return;
         }
 
-        if (targetHealth.TryTakeDamage(reflected ? reflectedDamage : damage, transform.position))
+        bool ignoreInvulnerability = !reflected && targetIsPlayer;
+        if (targetHealth.TryTakeDamage(reflected ? reflectedDamage : damage, transform.position, ignoreInvulnerability))
         {
             PlayHitSound();
         }

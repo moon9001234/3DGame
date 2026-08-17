@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -10,6 +11,18 @@ public class SideScrollerHUD : MonoBehaviour
 
     [Tooltip("\u73a9\u5bb6\u751f\u547d\u503c\u6ed1\u687f\u3002")]
     [SerializeField] private Slider healthSlider;
+
+    [Tooltip("\u751f\u547d\u503c\u6bcf\u4e00\u683c\u7684\u56fa\u5b9a\u5bec\u5ea6\u3002")]
+    [SerializeField] private float healthCellWidth = 18f;
+
+    [Tooltip("\u751f\u547d\u503c\u6bcf\u4e00\u683c\u7684\u9593\u8ddd\u3002")]
+    [SerializeField] private float healthCellSpacing = 3f;
+
+    [Tooltip("\u5269\u9918 HP \u683c\u5b50\u984f\u8272\u3002")]
+    [SerializeField] private Color fullHealthCellColor = new Color(0.86f, 0.12f, 0.1f, 1f);
+
+    [Tooltip("\u5df2\u640d\u5931 HP \u683c\u5b50\u984f\u8272\u3002")]
+    [SerializeField] private Color emptyHealthCellColor = new Color(0.18f, 0.04f, 0.04f, 0.95f);
 
     [Header("\u64cd\u4f5c\u8aaa\u660e")]
     [Tooltip("\u662f\u5426\u5728\u756b\u9762\u53f3\u4e0a\u89d2\u986f\u793a\u64cd\u4f5c\u8aaa\u660e\u3002")]
@@ -52,6 +65,9 @@ public class SideScrollerHUD : MonoBehaviour
 
     private Health subscribedHealth;
     private Text gameOverText;
+    private RectTransform healthCellsRoot;
+    private readonly List<Image> healthCells = new List<Image>();
+    private int cachedMaxHealth = -1;
 
     public static SideScrollerHUD EnsureRuntimeHud(Health playerHealth)
     {
@@ -144,6 +160,7 @@ public class SideScrollerHUD : MonoBehaviour
 
         healthSlider.maxValue = max;
         healthSlider.value = current;
+        UpdateHealthCells(current, max);
         SetGameOverVisible(current <= 0);
     }
 
@@ -195,6 +212,8 @@ public class SideScrollerHUD : MonoBehaviour
     {
         if (healthSlider != null)
         {
+            EnsureHealthCellsRoot();
+            HideSliderFillVisuals();
             return;
         }
 
@@ -204,6 +223,8 @@ public class SideScrollerHUD : MonoBehaviour
             healthSlider = existing.GetComponent<Slider>();
             if (healthSlider != null)
             {
+                EnsureHealthCellsRoot();
+                HideSliderFillVisuals();
                 return;
             }
         }
@@ -237,6 +258,129 @@ public class SideScrollerHUD : MonoBehaviour
         healthSlider.transition = Selectable.Transition.None;
         healthSlider.direction = Slider.Direction.LeftToRight;
         healthSlider.minValue = 0f;
+        EnsureHealthCellsRoot();
+        HideSliderFillVisuals();
+    }
+
+    private void EnsureHealthCellsRoot()
+    {
+        if (healthSlider == null)
+        {
+            return;
+        }
+
+        Transform existing = healthSlider.transform.Find("Health Cells");
+        if (existing != null)
+        {
+            healthCellsRoot = existing.GetComponent<RectTransform>();
+        }
+
+        if (healthCellsRoot == null)
+        {
+            GameObject cellsObject = new GameObject("Health Cells");
+            cellsObject.transform.SetParent(healthSlider.transform, false);
+            healthCellsRoot = cellsObject.AddComponent<RectTransform>();
+        }
+
+        StretchToParent(healthCellsRoot);
+        healthCellsRoot.offsetMin = new Vector2(3f, 3f);
+        healthCellsRoot.offsetMax = new Vector2(-3f, -3f);
+        healthCellsRoot.SetAsLastSibling();
+    }
+
+    private void HideSliderFillVisuals()
+    {
+        if (healthSlider == null)
+        {
+            return;
+        }
+
+        if (healthSlider.fillRect != null)
+        {
+            Image fillImage = healthSlider.fillRect.GetComponent<Image>();
+            if (fillImage != null)
+            {
+                fillImage.enabled = false;
+            }
+        }
+    }
+
+    private void UpdateHealthCells(int current, int max)
+    {
+        EnsureHealthCellsRoot();
+        if (healthCellsRoot == null)
+        {
+            return;
+        }
+
+        int cellCount = Mathf.Max(0, max);
+        ResizeHealthContainer(cellCount);
+        if (cachedMaxHealth != cellCount || healthCells.Count != cellCount)
+        {
+            RebuildHealthCells(cellCount);
+        }
+
+        int filledCount = Mathf.Clamp(current, 0, cellCount);
+        for (int i = 0; i < healthCells.Count; i++)
+        {
+            if (healthCells[i] != null)
+            {
+                healthCells[i].color = i < filledCount ? fullHealthCellColor : emptyHealthCellColor;
+            }
+        }
+    }
+
+    private void ResizeHealthContainer(int cellCount)
+    {
+        if (healthSlider == null)
+        {
+            return;
+        }
+
+        RectTransform sliderRect = healthSlider.GetComponent<RectTransform>();
+        if (sliderRect == null)
+        {
+            return;
+        }
+
+        float cellWidth = Mathf.Max(1f, healthCellWidth);
+        float spacing = Mathf.Max(0f, healthCellSpacing);
+        float innerWidth = cellCount > 0 ? cellWidth * cellCount + spacing * (cellCount - 1) : 0f;
+        sliderRect.sizeDelta = new Vector2(innerWidth + 6f, sliderRect.sizeDelta.y);
+    }
+
+    private void RebuildHealthCells(int cellCount)
+    {
+        cachedMaxHealth = cellCount;
+        healthCells.Clear();
+        if (healthCellsRoot == null)
+        {
+            return;
+        }
+
+        for (int i = healthCellsRoot.childCount - 1; i >= 0; i--)
+        {
+            Destroy(healthCellsRoot.GetChild(i).gameObject);
+        }
+
+        if (cellCount <= 0)
+        {
+            return;
+        }
+
+        float spacing = Mathf.Max(0f, healthCellSpacing);
+        float cellWidth = Mathf.Max(1f, healthCellWidth);
+        for (int i = 0; i < cellCount; i++)
+        {
+            GameObject cellObject = CreateUIBlock("HP Cell " + (i + 1), healthCellsRoot, fullHealthCellColor);
+            RectTransform cellRect = cellObject.GetComponent<RectTransform>();
+            cellRect.anchorMin = new Vector2(0f, 0f);
+            cellRect.anchorMax = new Vector2(0f, 1f);
+            cellRect.pivot = new Vector2(0f, 0.5f);
+            cellRect.anchoredPosition = new Vector2(i * (cellWidth + spacing), 0f);
+            cellRect.sizeDelta = new Vector2(cellWidth, 0f);
+            healthCells.Add(cellObject.GetComponent<Image>());
+        }
     }
 
     private void EnsureControlGuide()

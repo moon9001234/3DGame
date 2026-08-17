@@ -11,8 +11,18 @@ public class EnemyVisualAnimator : MonoBehaviour
     private static readonly int HitHash = Animator.StringToHash("Hit");
     private static readonly int InCombatHash = Animator.StringToHash("InCombat");
 
+    [Header("\u52d5\u756b\u8a2d\u5b9a")]
+    [Tooltip("SideScroller \u6a21\u5f0f\u4f7f\u7528\u7684 Animator Controller\u3002\u7559\u7a7a\u6642\u6703\u6cbf\u7528 Animator \u76ee\u524d\u7684\u8a2d\u5b9a\u3002")]
+    [SerializeField] private RuntimeAnimatorController sideScrollerAnimatorController;
+
+    [Tooltip("Free3D \u6a21\u5f0f\u4f7f\u7528\u7684 Animator Controller\u3002\u61c9\u6307\u5411\u5c0d\u61c9\u7684 *_Free3D controller\u3002")]
+    [SerializeField] private RuntimeAnimatorController free3DAnimatorController;
+
     private Rigidbody body;
     private Animator animator;
+    private RuntimeAnimatorController defaultAnimatorController;
+    private bool useFree3DAnimatorController;
+    private bool hasAppliedAnimatorController;
     private bool pauseHitAtNormalizedTime;
     private bool hitPaused;
     private float hitPauseNormalizedTime = 0.5f;
@@ -25,6 +35,8 @@ public class EnemyVisualAnimator : MonoBehaviour
     {
         body = GetComponent<Rigidbody>();
         animator = GetComponentInChildren<Animator>();
+        CacheAnimatorControllers();
+        ApplyMovementModeAnimatorController(true);
     }
 
     private void OnDisable()
@@ -38,12 +50,21 @@ public class EnemyVisualAnimator : MonoBehaviour
         if (animator == null)
         {
             animator = GetComponentInChildren<Animator>();
+            CacheAnimatorControllers();
+            ApplyMovementModeAnimatorController(true);
             return;
         }
 
+        ApplyMovementModeAnimatorController();
         animator.SetFloat(SpeedHash, Vector3.ProjectOnPlane(body.linearVelocity, Vector3.up).magnitude);
         UpdateAttackSpeedOverride();
         UpdateHitPause();
+    }
+
+    public void SetUseFree3DAnimations(bool useFree3D)
+    {
+        useFree3DAnimatorController = useFree3D;
+        ApplyMovementModeAnimatorController();
     }
 
     public float PlayAttack()
@@ -211,6 +232,63 @@ public class EnemyVisualAnimator : MonoBehaviour
         }
 
         attackSpeedOverrideActive = false;
+    }
+
+    private void CacheAnimatorControllers()
+    {
+        if (animator == null)
+        {
+            return;
+        }
+
+        defaultAnimatorController = animator.runtimeAnimatorController;
+        if (sideScrollerAnimatorController == null)
+        {
+            sideScrollerAnimatorController = defaultAnimatorController;
+        }
+
+        if (free3DAnimatorController == null)
+        {
+            free3DAnimatorController = defaultAnimatorController;
+        }
+    }
+
+    private void ApplyMovementModeAnimatorController(bool force = false)
+    {
+        if (animator == null)
+        {
+            return;
+        }
+
+        RuntimeAnimatorController targetController = useFree3DAnimatorController
+            ? free3DAnimatorController
+            : sideScrollerAnimatorController;
+
+        if (targetController == null)
+        {
+            targetController = defaultAnimatorController != null
+                ? defaultAnimatorController
+                : animator.runtimeAnimatorController;
+        }
+
+        if (targetController == null)
+        {
+            return;
+        }
+
+        if (!force && hasAppliedAnimatorController && animator.runtimeAnimatorController == targetController)
+        {
+            return;
+        }
+
+        if (animator.runtimeAnimatorController != targetController)
+        {
+            ResumeHit();
+            ClearAttackSpeedOverride();
+            animator.runtimeAnimatorController = targetController;
+        }
+
+        hasAppliedAnimatorController = true;
     }
 
     private bool HasAnimatorParameter(int parameterHash)

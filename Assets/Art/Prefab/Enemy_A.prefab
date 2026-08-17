@@ -383,6 +383,10 @@ MonoBehaviour:
     hitSound: {fileID: 0}
     hitSoundVolume: 1
   attackCooldown: 1.25
+  useRangedAttackRhythm: 0
+  rangedAttackRhythm:
+  - 1.25
+  rangedAttackGroupCooldown: 0
   attackWindup: 0.25
   attackLockSeconds: 0.55
   launchAwayOnDeath: 1
@@ -433,6 +437,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cdd98302eea0faf41b9ba5050983c148, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyVisualAnimator
+  sideScrollerAnimatorController: {fileID: 9100000, guid: a4b1427dbe3ba5f489c70fbaa2d825a3, type: 2}
+  free3DAnimatorController: {fileID: 9100000, guid: e41f0e7e0a2f4b748baf6a41cdb1a301, type: 2}
 --- !u!114 &3889317422663841038
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -448,6 +454,8 @@ MonoBehaviour:
   worldOffset: {x: 0, y: 1.55, z: -0.08}
   size: {x: 1.35, y: 0.12}
   depth: 0.04
+  cellWidth: 0.24
+  cellSpacing: 0.025
   hideWhenFull: 0
   facingCamera: {fileID: 0}
 --- !u!114 &6618157819326714365

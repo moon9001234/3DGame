@@ -15,6 +15,8 @@ public class PlayerMotor3D : MonoBehaviour
     private const string JumpDownStateName = "Jump_Down";
     private const string DeathStateName = "Death";
     private const string DashingParameterName = "Dashing";
+    private const string DefaultSideScrollerAnimatorControllerPath = "Assets/SideScroller3D/Animation/PlayerVisual.controller";
+    private const string DefaultFree3DAnimatorControllerPath = "Assets/SideScroller3D/Animation/PlayerVisual_Free3D.controller";
 
     private enum MovementMode
     {
@@ -113,6 +115,12 @@ public class PlayerMotor3D : MonoBehaviour
     [SerializeField] private bool dashAfterimageIncludeInactiveRenderers;
 
     [Header("\u52d5\u756b\u8a2d\u5b9a")]
+    [Tooltip("SideScroller \u6a21\u5f0f\u4f7f\u7528\u7684 Animator Controller\u3002\u7559\u7a7a\u6642\u6703\u6cbf\u7528 Animator \u76ee\u524d\u7684\u8a2d\u5b9a\u3002")]
+    [SerializeField] private RuntimeAnimatorController sideScrollerAnimatorController;
+
+    [Tooltip("Free3D \u6a21\u5f0f\u4f7f\u7528\u7684 Animator Controller\u3002\u9810\u8a2d\u61c9\u6307\u5411 PlayerVisual_Free3D\uff0cmotion \u4f86\u6e90\u70ba TV_Man_3D.fbx\u3002")]
+    [SerializeField] private RuntimeAnimatorController free3DAnimatorController;
+
     [Tooltip("\u8173\u672c\u5207\u63db Dash\u3001Dash_End\u3001Death \u7b49\u52d5\u4f5c state \u6642\u7684\u6de1\u5165\u6642\u9593\u3002\u8df3\u8e8d\u52d5\u4f5c\u4f7f\u7528\u4e0b\u65b9\u7368\u7acb\u8a2d\u5b9a\u3002")]
     [SerializeField] private float actionAnimationCrossFadeSeconds = 0.04f;
 
@@ -232,6 +240,9 @@ public class PlayerMotor3D : MonoBehaviour
     private bool playedDeathAnimation;
     private string requestedAnimationState;
     private float actionAnimationLockUntil;
+    private RuntimeAnimatorController defaultAnimatorController;
+    private MovementMode appliedAnimatorMode;
+    private bool hasAppliedAnimatorController;
     private RuntimeAnimatorController cachedDashingAnimatorController;
     private string cachedAnimatorBoolName;
     private bool cachedHasDashingParameter;
@@ -254,6 +265,8 @@ public class PlayerMotor3D : MonoBehaviour
         animator = GetComponentInChildren<Animator>();
         combat = GetComponent<PlayerCombat3D>();
         health = GetComponent<Health>();
+        CacheMovementModeAnimatorControllers();
+        ApplyMovementModeAnimatorController(true);
         EnsurePlayerEnemyLayerCollision();
         EnsureDashAfterimage();
         initialFacingRotation = transform.rotation;
@@ -335,6 +348,7 @@ public class PlayerMotor3D : MonoBehaviour
 
     private void Update()
     {
+        ApplyMovementModeAnimatorController();
         UpdateDashState();
         UpdateAirAnimation();
         bool inputLocked = IsInputLocked;
@@ -632,6 +646,88 @@ public class PlayerMotor3D : MonoBehaviour
         }
 
         return false;
+    }
+
+    private void CacheMovementModeAnimatorControllers()
+    {
+        if (animator == null)
+        {
+            return;
+        }
+
+        defaultAnimatorController = animator.runtimeAnimatorController;
+#if UNITY_EDITOR
+        if (sideScrollerAnimatorController == null)
+        {
+            sideScrollerAnimatorController = UnityEditor.AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(
+                DefaultSideScrollerAnimatorControllerPath);
+        }
+
+        if (free3DAnimatorController == null)
+        {
+            free3DAnimatorController = UnityEditor.AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(
+                DefaultFree3DAnimatorControllerPath);
+        }
+#endif
+        if (sideScrollerAnimatorController == null)
+        {
+            sideScrollerAnimatorController = defaultAnimatorController;
+        }
+
+        if (free3DAnimatorController == null)
+        {
+            free3DAnimatorController = defaultAnimatorController;
+        }
+    }
+
+    private void ApplyMovementModeAnimatorController(bool force = false)
+    {
+        if (animator == null)
+        {
+            return;
+        }
+
+        MovementMode targetMode = movementMode;
+        RuntimeAnimatorController targetController = targetMode == MovementMode.Free3D
+            ? free3DAnimatorController
+            : sideScrollerAnimatorController;
+
+        if (targetController == null)
+        {
+            targetController = defaultAnimatorController != null
+                ? defaultAnimatorController
+                : animator.runtimeAnimatorController;
+        }
+
+        if (targetController == null)
+        {
+            return;
+        }
+
+        if (!force
+            && hasAppliedAnimatorController
+            && appliedAnimatorMode == targetMode
+            && animator.runtimeAnimatorController == targetController)
+        {
+            return;
+        }
+
+        if (animator.runtimeAnimatorController != targetController)
+        {
+            animator.runtimeAnimatorController = targetController;
+            requestedAnimationState = null;
+            ResetAnimatorParameterCache();
+        }
+
+        appliedAnimatorMode = targetMode;
+        hasAppliedAnimatorController = true;
+    }
+
+    private void ResetAnimatorParameterCache()
+    {
+        cachedDashingAnimatorController = null;
+        cachedAnimatorBoolName = null;
+        cachedHasDashingParameter = false;
     }
 
     private bool IsDashDirectionBlocked()

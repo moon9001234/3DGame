@@ -240,6 +240,8 @@ MonoBehaviour:
   dashAfterimageColor: {r: 0.25, g: 0.55, b: 1, a: 0.45}
   dashAfterimageIncludeMeshRenderers: 1
   dashAfterimageIncludeInactiveRenderers: 0
+  sideScrollerAnimatorController: {fileID: 9100000, guid: 98e1994488d08f14c93e2d3b5446db27, type: 2}
+  free3DAnimatorController: {fileID: 9100000, guid: dce4a8b892fc44d6b37c0ec581fd8f87, type: 2}
   actionAnimationCrossFadeSeconds: 0.04
   jumpAnimationCrossFadeSeconds: 0.15
   groundCheck: {fileID: 6050075638775192170}
@@ -388,15 +390,15 @@ PrefabInstance:
     - target: {fileID: 58609327184883007, guid: cf301ca572465ed43b067fdb2ebd3bd4, type: 3}
       propertyPath: attacks.Array.data[0].attackEffectRoot
       value: 
-      objectReference: {fileID: 4214304940546854768, guid: 695ff324093e91743a8abf684fa028de, type: 3}
+      objectReference: {fileID: 1046192946819082377, guid: 3601cc64d8ee2a74586a1c33ddb79368, type: 3}
     - target: {fileID: 58609327184883007, guid: cf301ca572465ed43b067fdb2ebd3bd4, type: 3}
       propertyPath: attacks.Array.data[1].attackEffectRoot
       value: 
-      objectReference: {fileID: 4214304940546854768, guid: 695ff324093e91743a8abf684fa028de, type: 3}
+      objectReference: {fileID: 1046192946819082377, guid: 89808bb752117bd4fa6fa4d50e1d2945, type: 3}
     - target: {fileID: 58609327184883007, guid: cf301ca572465ed43b067fdb2ebd3bd4, type: 3}
       propertyPath: attacks.Array.data[2].attackEffectRoot
       value: 
-      objectReference: {fileID: 4214304940546854768, guid: 695ff324093e91743a8abf684fa028de, type: 3}
+      objectReference: {fileID: 1209227068673788613, guid: 90e2a02f8b766c84a9b25877110f6b78, type: 3}
     - target: {fileID: 58609327184883007, guid: cf301ca572465ed43b067fdb2ebd3bd4, type: 3}
       propertyPath: attacks.Array.data[0].cameraShakeDuration
       value: 0.1
@@ -415,11 +417,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 58609327184883007, guid: cf301ca572465ed43b067fdb2ebd3bd4, type: 3}
       propertyPath: attacks.Array.data[0].nextInputWindowSeconds
-      value: 1.5
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 58609327184883007, guid: cf301ca572465ed43b067fdb2ebd3bd4, type: 3}
       propertyPath: attacks.Array.data[1].nextInputWindowSeconds
-      value: 1.5
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 58609327184883007, guid: cf301ca572465ed43b067fdb2ebd3bd4, type: 3}
       propertyPath: attacks.Array.data[2].nextInputWindowSeconds

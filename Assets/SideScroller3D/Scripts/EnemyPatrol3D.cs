@@ -428,6 +428,7 @@ public class EnemyPatrol3D : MonoBehaviour
         {
             visualAnimator = gameObject.AddComponent<EnemyVisualAnimator>();
         }
+        SyncVisualAnimatorMovementMode();
 
         grounder = GetComponent<EnemyGrounder3D>();
         if (grounder == null)
@@ -487,6 +488,7 @@ public class EnemyPatrol3D : MonoBehaviour
 
     private void FixedUpdate()
     {
+        SyncVisualAnimatorMovementMode();
         if (deathSequenceStarted)
         {
             return;
@@ -528,6 +530,11 @@ public class EnemyPatrol3D : MonoBehaviour
         }
 
         grounder?.SnapToGround();
+    }
+
+    private void SyncVisualAnimatorMovementMode()
+    {
+        visualAnimator?.SetUseFree3DAnimations(UsesFree3DMovement);
     }
 
     private void UpdateState()
