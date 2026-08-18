@@ -16,6 +16,7 @@ public class PlayerWeaponAttackProfileEditor : Editor
         serializedObject.Update();
 
         DrawScriptField();
+        DrawDefinitionSection();
         DrawSection("attackBehavior",
             "attackCooldown",
             "attackMoveLockSeconds",
@@ -33,6 +34,82 @@ public class PlayerWeaponAttackProfileEditor : Editor
             "targetHitSounds");
 
         serializedObject.ApplyModifiedProperties();
+    }
+
+    private void DrawDefinitionSection()
+    {
+        DrawSection("definition",
+            "weaponDefinition",
+            "applyDefinitionOnAwake",
+            "applyDefinitionInEditor");
+
+        SerializedProperty definitionProperty = serializedObject.FindProperty("weaponDefinition");
+        if (definitionProperty != null && definitionProperty.objectReferenceValue == null)
+        {
+            EditorGUILayout.HelpBox(
+                SideScrollerInspectorLabels.Text("PlayerWeaponAttackProfile.weaponDefinitionMissing", "No Weapon Definition asset is assigned yet."),
+                MessageType.Info);
+        }
+
+        using (new EditorGUILayout.HorizontalScope())
+        {
+            if (GUILayout.Button(SideScrollerInspectorLabels.Text("PlayerWeaponAttackProfile.applyDefinition", "Apply Weapon Definition")))
+            {
+                serializedObject.ApplyModifiedProperties();
+                for (int i = 0; i < targets.Length; i++)
+                {
+                    if (targets[i] is PlayerWeaponAttackProfile profile)
+                    {
+                        Undo.RecordObject(profile, "Apply Weapon Definition");
+                        profile.ApplyDefinition();
+                        EditorUtility.SetDirty(profile);
+
+                        PlayerWeaponHitbox hitbox = profile.GetComponent<PlayerWeaponHitbox>();
+                        if (hitbox != null)
+                        {
+                            Undo.RecordObject(hitbox, "Apply Weapon Definition");
+                            hitbox.ApplyDefinition(profile.Definition);
+                            EditorUtility.SetDirty(hitbox);
+                        }
+                    }
+                }
+
+                serializedObject.Update();
+            }
+
+            if (GUILayout.Button(SideScrollerInspectorLabels.Text("PlayerWeaponAttackProfile.createDefinition", "Create & Assign")))
+            {
+                serializedObject.ApplyModifiedProperties();
+                for (int i = 0; i < targets.Length; i++)
+                {
+                    if (targets[i] is PlayerWeaponAttackProfile profile)
+                    {
+                        Undo.RecordObject(profile, "Create Weapon Definition");
+                        WeaponDefinition3D definition = SideScrollerDefinitionAssetUtility.CreateWeaponDefinition(profile);
+                        SerializedObject profileSerializedObject = new SerializedObject(profile);
+                        SerializedProperty weaponDefinitionProperty = profileSerializedObject.FindProperty("weaponDefinition");
+                        if (weaponDefinitionProperty != null)
+                        {
+                            weaponDefinitionProperty.objectReferenceValue = definition;
+                            profileSerializedObject.ApplyModifiedProperties();
+                        }
+
+                        PlayerWeaponHitbox hitbox = profile.GetComponent<PlayerWeaponHitbox>();
+                        if (hitbox != null)
+                        {
+                            Undo.RecordObject(hitbox, "Create Weapon Definition");
+                            hitbox.ApplyDefinition(definition);
+                            EditorUtility.SetDirty(hitbox);
+                        }
+
+                        profile.ApplyDefinition(definition);
+                        EditorUtility.SetDirty(profile);
+                    }
+                }
+
+                serializedObject.Update();
+            }
+        }
     }
 
     private void DrawScriptField()

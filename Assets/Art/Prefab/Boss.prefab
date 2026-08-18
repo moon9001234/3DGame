@@ -264,6 +264,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 88674e923a087084b8390b3eee2a7bff, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyPatrol3D
+  enemyDefinition: {fileID: 11400000, guid: c00f40f3da794c8b8c0a4f4dee55aa2c, type: 2}
+  applyDefinitionOnAwake: 1
+  applyDefinitionInEditor: 0
   attackMode: 2
   movementMode: 0
   useTransformRightAsMovementAxis: 1

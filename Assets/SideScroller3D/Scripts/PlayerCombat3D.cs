@@ -76,8 +76,14 @@ public class PlayerCombat3D : MonoBehaviour
         RestoreAttackAnimationSpeedIfNeeded();
         UpdateCombatMode();
 
+        bool mouseAttackPressed = WasMouseAttackPressed();
         if (WasAttackPressed())
         {
+            if (mouseAttackPressed && motor != null && motor.UsesFree3DMovement && TryGetMouseAimPoint(out Vector3 mouseAimPoint))
+            {
+                motor.FaceTowardWorldPoint(mouseAimPoint, true);
+            }
+
             if (CanQueueComboInput())
             {
                 QueueComboInput();
@@ -425,6 +431,63 @@ public class PlayerCombat3D : MonoBehaviour
 #else
         return false;
 #endif
+    }
+
+    private bool WasMouseAttackPressed()
+    {
+#if ENABLE_INPUT_SYSTEM
+        return Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame;
+#elif ENABLE_LEGACY_INPUT_MANAGER
+        return Input.GetMouseButtonDown(0);
+#else
+        return false;
+#endif
+    }
+
+    private bool TryGetMouseAimPoint(out Vector3 aimPoint)
+    {
+        aimPoint = transform.position + transform.forward;
+
+        Camera aimCamera = motor != null ? motor.ResolveAimingCamera() : Camera.main;
+        if (aimCamera == null)
+        {
+            aimCamera = Object.FindFirstObjectByType<Camera>();
+        }
+
+        if (aimCamera == null)
+        {
+            return false;
+        }
+
+#if ENABLE_INPUT_SYSTEM
+        if (Mouse.current == null)
+        {
+            return false;
+        }
+
+        Vector2 screenPosition = Mouse.current.position.ReadValue();
+#elif ENABLE_LEGACY_INPUT_MANAGER
+        Vector2 screenPosition = Input.mousePosition;
+#else
+        return false;
+#endif
+
+        Ray ray = aimCamera.ScreenPointToRay(screenPosition);
+        int rayMask = ~LayerMask.GetMask("Player");
+        if (Physics.Raycast(ray, out RaycastHit hit, 1000f, rayMask, QueryTriggerInteraction.Ignore))
+        {
+            aimPoint = hit.point;
+            return true;
+        }
+
+        Plane plane = new Plane(Vector3.up, new Vector3(0f, transform.position.y, 0f));
+        if (plane.Raycast(ray, out float enter))
+        {
+            aimPoint = ray.GetPoint(enter);
+            return true;
+        }
+
+        return false;
     }
 
     private float GetAttackMoveLockSeconds(float attackSpeed, AnimationClip activeAttackClip)

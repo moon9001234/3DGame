@@ -301,7 +301,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f230008ab2f77894c985d8ed73702c89, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Health
-  maxHealth: 20
+  maxHealth: 4
   invulnerableSeconds: 0.35
 --- !u!114 &7031408298843765899
 MonoBehaviour:
@@ -315,12 +315,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 88674e923a087084b8390b3eee2a7bff, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyPatrol3D
+  enemyDefinition: {fileID: 11400000, guid: cf0de48c73546e54b81715f0554c3d74, type: 2}
+  applyDefinitionOnAwake: 1
+  applyDefinitionInEditor: 0
   attackMode: 0
-  movementMode: 1
+  movementMode: 0
   useTransformRightAsMovementAxis: 1
   movementAxis: {x: 1, y: 0, z: 0}
   lockDepthToMovementPlane: 1
-  moveSpeed: 4
+  moveSpeed: 5
   patrolMoveSpeed: 1.6
   homeStopDistance: 0.12
   fallbackPatrolHalfWidth: 2
@@ -333,8 +336,8 @@ MonoBehaviour:
   usePatrolObstacleMask: 0
   patrolObstacleCheckDistance: 0.35
   patrolObstacleRayHeights: {x: 0.2, y: 0.65, z: 1.1}
-  searchRange: 3
-  giveUpRange: 9
+  searchRange: 20
+  giveUpRange: 5.96
   detectionBoxOffset: {x: 0, y: 0, z: 0}
   detectionBoxHeight: 1.6
   detectionBoxDepth: 2
@@ -406,6 +409,7 @@ MonoBehaviour:
   respawnAfterCameraLeaves: 1
   respawnCameraAwaySeconds: 5
   respawnViewportPadding: 0.1
+  targetLostGraceSeconds: 0.35
 --- !u!114 &3655617565000574848
 MonoBehaviour:
   m_ObjectHideFlags: 0

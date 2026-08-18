@@ -1,0 +1,77 @@
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 12b65d2f786d43ef9fc1158a75e10604, type: 3}
+  m_Name: Player_Weapon_Definition
+  m_EditorClassIdentifier: 
+  applyAttackProfile: 1
+  attackCooldown: 0.45
+  attackMoveLockSeconds: 0.35
+  useAttackAnimationLength: 1
+  attackSpeedMultiplier: 1.5
+  attackCrossFadeSeconds: 0.03
+  allowAirAttacks: 0
+  targetMask:
+    serializedVersion: 2
+    m_Bits: 512
+  attacks:
+  - animatorStateName: Attack_01
+    animationClip: {fileID: 0}
+    animationClipName: Player_Atk01_01
+    triggerName: 
+    damage: 1
+    nextInputWindowSeconds: 0.1
+    nextAttackStartFrame: 15
+    attackEffectRoot: {fileID: 0}
+    cameraShakeAmplitude: 0.08
+    cameraShakeDuration: 0.08
+    cameraShakeFrequency: 35
+  - animatorStateName: Attack_02
+    animationClip: {fileID: 0}
+    animationClipName: Player_Atk01_02
+    triggerName: Attack2
+    damage: 1
+    nextInputWindowSeconds: 0.1
+    nextAttackStartFrame: 15
+    attackEffectRoot: {fileID: 0}
+    cameraShakeAmplitude: 0.08
+    cameraShakeDuration: 0.08
+    cameraShakeFrequency: 35
+  - animatorStateName: Attack_03
+    animationClip: {fileID: 0}
+    animationClipName: Player_Atk01_03
+    triggerName: Attack3
+    damage: 1
+    nextInputWindowSeconds: 0
+    nextAttackStartFrame: 15
+    attackEffectRoot: {fileID: 0}
+    cameraShakeAmplitude: 0.08
+    cameraShakeDuration: 0.08
+    cameraShakeFrequency: 35
+  attackHitSound: {fileID: 8300000, guid: 8fe21a255ac34044c87091eeaafe7dd4, type: 3}
+  attackHitSoundVolume: 1
+  targetHitSounds:
+  - targetNameContains: IronBall
+    targetTag: 
+    targetLayers:
+      serializedVersion: 2
+      m_Bits: 0
+    hitSound: {fileID: 8300000, guid: 7f1e92757eaaa1343bbcc3a93558868b, type: 3}
+    volume: 0.3
+  applyHitbox: 1
+  weaponSize: {x: 1.35, y: 0.16, z: 0.16}
+  weaponColor: {r: 0.85, g: 0.82, b: 0.72, a: 1}
+  useModelBoundsForHitbox: 0
+  updateColliderDuringPlay: 0
+  modelBoundsPadding: {x: 0.04, y: 0.04, z: 0.04}
+  projectileReflectExtraRange: {x: 0.45, y: 0.3, z: 0.3}
+  projectileReflectEffectPrefab: {fileID: 6263782476919498309, guid: 2e3c9eaec6256784cb6ca3f3ff84401c, type: 3}
+  projectileReflectEffectScale: 1
+  projectileReflectEffectFallbackLifetime: 2

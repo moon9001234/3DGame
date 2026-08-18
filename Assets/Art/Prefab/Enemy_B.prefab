@@ -401,6 +401,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 88674e923a087084b8390b3eee2a7bff, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyPatrol3D
+  enemyDefinition: {fileID: 11400000, guid: 18d508fdfe9d453a913753346f279eb4, type: 2}
+  applyDefinitionOnAwake: 1
+  applyDefinitionInEditor: 0
   attackMode: 1
   movementMode: 1
   useTransformRightAsMovementAxis: 1
@@ -494,6 +497,7 @@ MonoBehaviour:
   respawnAfterCameraLeaves: 1
   respawnCameraAwaySeconds: 5
   respawnViewportPadding: 0.1
+  targetLostGraceSeconds: 0.35
 --- !u!114 &1642920378331738523
 MonoBehaviour:
   m_ObjectHideFlags: 0

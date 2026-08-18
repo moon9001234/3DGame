@@ -18,6 +18,7 @@ public class EnemyPatrol3DEditor : Editor
         serializedObject.Update();
 
         DrawScriptField();
+        DrawDefinitionSection();
         DrawSection("Enemy Type", "attackMode");
 
         if (attackMode == null || attackMode.hasMultipleDifferentValues)
@@ -38,6 +39,77 @@ public class EnemyPatrol3DEditor : Editor
         DrawSection("Respawn", "respawnAfterCameraLeaves", "respawnCameraAwaySeconds", "respawnViewportPadding");
 
         serializedObject.ApplyModifiedProperties();
+    }
+
+    private void DrawDefinitionSection()
+    {
+        if (!DrawFoldoutHeader("Definition", true))
+        {
+            return;
+        }
+
+        SerializedProperty definitionProperty = serializedObject.FindProperty("enemyDefinition");
+
+        EditorGUI.indentLevel++;
+        DrawSerializedProperty("enemyDefinition");
+        DrawSerializedProperty("applyDefinitionOnAwake");
+        DrawSerializedProperty("applyDefinitionInEditor");
+
+        if (definitionProperty != null && definitionProperty.objectReferenceValue == null)
+        {
+            EditorGUILayout.HelpBox(
+                SideScrollerInspectorLabels.Text("EnemyPatrol3D.enemyDefinitionMissing", "No Enemy Definition asset is assigned yet."),
+                MessageType.Info);
+        }
+
+        using (new EditorGUILayout.HorizontalScope())
+        {
+            using (new EditorGUI.DisabledScope(definitionProperty == null))
+            {
+                if (GUILayout.Button(SideScrollerInspectorLabels.Text("EnemyPatrol3D.applyDefinition", "Apply Enemy Definition")))
+                {
+                    serializedObject.ApplyModifiedProperties();
+                    for (int i = 0; i < targets.Length; i++)
+                    {
+                        if (targets[i] is EnemyPatrol3D enemy)
+                        {
+                            Undo.RecordObject(enemy, "Apply Enemy Definition");
+                            enemy.ApplyDefinition();
+                            EditorUtility.SetDirty(enemy);
+                        }
+                    }
+
+                    serializedObject.Update();
+                }
+            }
+
+            if (GUILayout.Button(SideScrollerInspectorLabels.Text("EnemyPatrol3D.createDefinition", "Create & Assign")))
+            {
+                serializedObject.ApplyModifiedProperties();
+                for (int i = 0; i < targets.Length; i++)
+                {
+                    if (targets[i] is EnemyPatrol3D enemy)
+                    {
+                        Undo.RecordObject(enemy, "Create Enemy Definition");
+                        EnemyDefinition3D definition = SideScrollerDefinitionAssetUtility.CreateEnemyDefinition(enemy);
+                        SerializedObject enemySerializedObject = new SerializedObject(enemy);
+                        SerializedProperty enemyDefinitionProperty = enemySerializedObject.FindProperty("enemyDefinition");
+                        if (enemyDefinitionProperty != null)
+                        {
+                            enemyDefinitionProperty.objectReferenceValue = definition;
+                            enemySerializedObject.ApplyModifiedProperties();
+                        }
+
+                        enemy.ApplyDefinition(definition);
+                        EditorUtility.SetDirty(enemy);
+                    }
+                }
+
+                serializedObject.Update();
+            }
+        }
+
+        EditorGUI.indentLevel--;
     }
 
     private void DrawCommonSections()
@@ -304,14 +376,25 @@ public class EnemyPatrol3DEditor : Editor
                 continue;
             }
 
-            GUIContent label = SideScrollerInspectorLabels.Content(
-                "EnemyPatrol3D",
-                propertyNames[i],
-                ObjectNames.NicifyVariableName(propertyNames[i]));
-            EditorGUILayout.PropertyField(property, label, true);
+            DrawSerializedProperty(propertyNames[i]);
         }
 
         EditorGUI.indentLevel--;
+    }
+
+    private void DrawSerializedProperty(string propertyName)
+    {
+        SerializedProperty property = serializedObject.FindProperty(propertyName);
+        if (property == null)
+        {
+            return;
+        }
+
+        GUIContent label = SideScrollerInspectorLabels.Content(
+            "EnemyPatrol3D",
+            propertyName,
+            ObjectNames.NicifyVariableName(propertyName));
+        EditorGUILayout.PropertyField(property, label, true);
     }
 
     private void DrawRangedAttackRhythmSettings()

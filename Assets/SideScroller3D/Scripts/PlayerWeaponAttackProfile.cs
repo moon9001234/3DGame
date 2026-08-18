@@ -58,11 +58,32 @@ public class PlayerWeaponAttackStep
     public float CameraShakeAmplitude => Mathf.Max(0f, cameraShakeAmplitude);
     public float CameraShakeDuration => Mathf.Max(0f, cameraShakeDuration);
     public float CameraShakeFrequency => Mathf.Max(0f, cameraShakeFrequency);
+
+    public PlayerWeaponAttackStep CloneWithFallback(PlayerWeaponAttackStep fallback)
+    {
+        PlayerWeaponAttackStep clone = (PlayerWeaponAttackStep)MemberwiseClone();
+        if (clone.attackEffectRoot == null && fallback != null)
+        {
+            clone.attackEffectRoot = fallback.attackEffectRoot;
+        }
+
+        return clone;
+    }
 }
 
 public class PlayerWeaponAttackProfile : MonoBehaviour
 {
     private const string DefaultHitSoundPath = "Assets/Art/Sound/Hit.wav";
+
+    [Header("Definition")]
+    [Tooltip("Optional reusable weapon data asset. This profile can load attack tuning from it.")]
+    [SerializeField] private WeaponDefinition3D weaponDefinition;
+
+    [Tooltip("Apply Weapon Definition values when the weapon starts playing.")]
+    [SerializeField] private bool applyDefinitionOnAwake = true;
+
+    [Tooltip("Apply Weapon Definition values in edit mode during validation. Keep disabled when locally tweaking a prefab override.")]
+    [SerializeField] private bool applyDefinitionInEditor;
 
     [Header("Attack Behavior")]
     [Tooltip("Minimum time between attack starts.")]
@@ -118,15 +139,81 @@ public class PlayerWeaponAttackProfile : MonoBehaviour
     public AudioClip AttackHitSound => attackHitSound;
     public float AttackHitSoundVolume => Mathf.Clamp01(attackHitSoundVolume);
     public PlayerHitSoundRule[] TargetHitSounds => targetHitSounds;
+    public WeaponDefinition3D Definition => weaponDefinition;
 
     private void Reset()
     {
         AssignDefaultHitSoundIfNeeded();
     }
 
+    private void Awake()
+    {
+        if (applyDefinitionOnAwake)
+        {
+            ApplyDefinition();
+        }
+    }
+
     private void OnValidate()
     {
+        if (applyDefinitionInEditor)
+        {
+            ApplyDefinition();
+        }
+
         AssignDefaultHitSoundIfNeeded();
+    }
+
+    public void ApplyDefinition()
+    {
+        ApplyDefinition(weaponDefinition);
+    }
+
+    public void ApplyDefinition(WeaponDefinition3D definition)
+    {
+        if (definition == null || !definition.applyAttackProfile)
+        {
+            return;
+        }
+
+        attackCooldown = definition.attackCooldown;
+        attackMoveLockSeconds = definition.attackMoveLockSeconds;
+        useAttackAnimationLength = definition.useAttackAnimationLength;
+        attackSpeedMultiplier = definition.attackSpeedMultiplier;
+        attackCrossFadeSeconds = definition.attackCrossFadeSeconds;
+        allowAirAttacks = definition.allowAirAttacks;
+        targetMask = definition.targetMask;
+        attacks = CloneAttackSteps(definition.attacks, attacks);
+        attackHitSound = definition.attackHitSound;
+        attackHitSoundVolume = definition.attackHitSoundVolume;
+        targetHitSounds = CloneHitSoundRules(definition.targetHitSounds);
+        AssignDefaultHitSoundIfNeeded();
+    }
+
+    public void SaveToDefinition()
+    {
+        SaveToDefinition(weaponDefinition);
+    }
+
+    public void SaveToDefinition(WeaponDefinition3D definition)
+    {
+        if (definition == null)
+        {
+            return;
+        }
+
+        definition.applyAttackProfile = true;
+        definition.attackCooldown = attackCooldown;
+        definition.attackMoveLockSeconds = attackMoveLockSeconds;
+        definition.useAttackAnimationLength = useAttackAnimationLength;
+        definition.attackSpeedMultiplier = attackSpeedMultiplier;
+        definition.attackCrossFadeSeconds = attackCrossFadeSeconds;
+        definition.allowAirAttacks = allowAirAttacks;
+        definition.targetMask = targetMask;
+        definition.attacks = CloneAttackSteps(attacks, definition.attacks);
+        definition.attackHitSound = attackHitSound;
+        definition.attackHitSoundVolume = attackHitSoundVolume;
+        definition.targetHitSounds = CloneHitSoundRules(targetHitSounds);
     }
 
     public bool TryGetAttack(int index, out PlayerWeaponAttackStep attack)
@@ -149,5 +236,34 @@ public class PlayerWeaponAttackProfile : MonoBehaviour
             attackHitSound = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>(DefaultHitSoundPath);
         }
 #endif
+    }
+
+    private static PlayerWeaponAttackStep[] CloneAttackSteps(PlayerWeaponAttackStep[] source, PlayerWeaponAttackStep[] fallback)
+    {
+        if (source == null)
+        {
+            return null;
+        }
+
+        PlayerWeaponAttackStep[] clones = new PlayerWeaponAttackStep[source.Length];
+        for (int i = 0; i < source.Length; i++)
+        {
+            PlayerWeaponAttackStep fallbackStep = fallback != null && i < fallback.Length ? fallback[i] : null;
+            clones[i] = source[i] != null ? source[i].CloneWithFallback(fallbackStep) : null;
+        }
+
+        return clones;
+    }
+
+    private static PlayerHitSoundRule[] CloneHitSoundRules(PlayerHitSoundRule[] source)
+    {
+        if (source == null)
+        {
+            return null;
+        }
+
+        PlayerHitSoundRule[] clone = new PlayerHitSoundRule[source.Length];
+        source.CopyTo(clone, 0);
+        return clone;
     }
 }

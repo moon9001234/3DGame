@@ -186,30 +186,6 @@ public class GameBalanceSettings3DEditor : Editor
         "projectileReflectEffectFallbackLifetime"
     };
 
-    [MenuItem("Tools/3D \u904a\u6232\u5de5\u5177/\u5efa\u7acb\u96c6\u4e2d\u6578\u503c\u8a2d\u5b9a")]
-    private static void CreateOrSelectSettingsObject()
-    {
-        GameBalanceSettings3D existing = FindFirstSceneObject<GameBalanceSettings3D>(true);
-        if (existing != null)
-        {
-            Selection.activeObject = existing.gameObject;
-            EditorGUIUtility.PingObject(existing.gameObject);
-            return;
-        }
-
-        GameObject settingsObject = new GameObject("Game Balance Settings");
-        Undo.RegisterCreatedObjectUndo(settingsObject, "Create Game Balance Settings");
-        settingsObject.AddComponent<GameBalanceSettings3D>();
-        Selection.activeObject = settingsObject;
-        EditorGUIUtility.PingObject(settingsObject);
-
-        Scene activeScene = SceneManager.GetActiveScene();
-        if (activeScene.IsValid())
-        {
-            EditorSceneManager.MarkSceneDirty(activeScene);
-        }
-    }
-
     public override void OnInspectorGUI()
     {
         SideScrollerInspectorLabels.ReloadIfNeeded();

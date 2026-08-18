@@ -6,6 +6,16 @@ public class PlayerWeaponHitbox : MonoBehaviour
 {
     private const string DefaultProjectileReflectEffectPath = "Assets/Art/Prefab/FX/CFXR4 Sword Hit FIRE (Cross) 1.prefab";
 
+    [Header("Definition")]
+    [Tooltip("Optional reusable weapon data asset. If empty, this hitbox can reuse the definition on PlayerWeaponAttackProfile.")]
+    [SerializeField] private WeaponDefinition3D weaponDefinition;
+
+    [Tooltip("Apply Weapon Definition values when the weapon starts playing.")]
+    [SerializeField] private bool applyDefinitionOnAwake = true;
+
+    [Tooltip("Apply Weapon Definition values in edit mode during validation. Keep disabled when locally tweaking a prefab override.")]
+    [SerializeField] private bool applyDefinitionInEditor;
+
     [Header("\u6b66\u5668\u5224\u5b9a")]
     [Tooltip("\u6c92\u6709\u4f7f\u7528\u6a21\u578b\u908a\u754c\u6642\uff0c\u66ab\u4ee3\u6b66\u5668\u986f\u793a\u7528\u7684\u5927\u5c0f\u3002\u624b\u52d5\u8abf\u6574\u653b\u64ca\u7bc4\u570d\u6642\uff0c\u8acb\u76f4\u63a5\u8abf Box Collider\u3002")]
     [SerializeField] private Vector3 weaponSize = new Vector3(1.35f, 0.16f, 0.16f);
@@ -59,9 +69,22 @@ public class PlayerWeaponHitbox : MonoBehaviour
 
     private void Awake()
     {
+        if (applyDefinitionOnAwake)
+        {
+            ApplyDefinition();
+        }
+
         ownerHealth = GetComponentInParent<Health>();
         EnsureParts();
         SetHitboxActive(false);
+    }
+
+    private void OnValidate()
+    {
+        if (applyDefinitionInEditor)
+        {
+            ApplyDefinition();
+        }
     }
 
     private void Update()
@@ -121,6 +144,69 @@ public class PlayerWeaponHitbox : MonoBehaviour
     public void RefreshParts()
     {
         EnsureParts();
+    }
+
+    public void ApplyDefinition()
+    {
+        ApplyDefinition(ResolveWeaponDefinition());
+    }
+
+    public void ApplyDefinition(WeaponDefinition3D definition)
+    {
+        if (definition == null || !definition.applyHitbox)
+        {
+            return;
+        }
+
+        weaponSize = definition.weaponSize;
+        weaponColor = definition.weaponColor;
+        useModelBoundsForHitbox = definition.useModelBoundsForHitbox;
+        updateColliderDuringPlay = definition.updateColliderDuringPlay;
+        modelBoundsPadding = definition.modelBoundsPadding;
+        projectileReflectExtraRange = definition.projectileReflectExtraRange;
+        projectileReflectEffectPrefab = definition.projectileReflectEffectPrefab;
+        projectileReflectEffectScale = definition.projectileReflectEffectScale;
+        projectileReflectEffectFallbackLifetime = definition.projectileReflectEffectFallbackLifetime;
+
+        if (hitbox != null || visualRenderer != null)
+        {
+            EnsureParts();
+        }
+    }
+
+    public void SaveToDefinition()
+    {
+        SaveToDefinition(ResolveWeaponDefinition());
+    }
+
+    public void SaveToDefinition(WeaponDefinition3D definition)
+    {
+        if (definition == null)
+        {
+            return;
+        }
+
+        definition.applyHitbox = true;
+        definition.weaponSize = weaponSize;
+        definition.weaponColor = weaponColor;
+        definition.useModelBoundsForHitbox = useModelBoundsForHitbox;
+        definition.updateColliderDuringPlay = updateColliderDuringPlay;
+        definition.modelBoundsPadding = modelBoundsPadding;
+        definition.projectileReflectExtraRange = projectileReflectExtraRange;
+        definition.projectileReflectEffectPrefab = projectileReflectEffectPrefab;
+        definition.projectileReflectEffectScale = projectileReflectEffectScale;
+        definition.projectileReflectEffectFallbackLifetime = projectileReflectEffectFallbackLifetime;
+    }
+
+    private WeaponDefinition3D ResolveWeaponDefinition()
+    {
+        if (weaponDefinition != null)
+        {
+            return weaponDefinition;
+        }
+
+        PlayerWeaponAttackProfile profile = GetComponent<PlayerWeaponAttackProfile>();
+        return profile != null ? profile.Definition : null;
     }
 
     public void SetSize(Vector3 size)

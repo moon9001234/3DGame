@@ -246,13 +246,32 @@ public class PlayerMotor3D : MonoBehaviour
     private RuntimeAnimatorController cachedDashingAnimatorController;
     private string cachedAnimatorBoolName;
     private bool cachedHasDashingParameter;
+    private Vector3 forcedFree3DFacingDirection = Vector3.right;
+    private float forcedFree3DFacingUntil;
 
     public bool IsGrounded { get; private set; }
     public bool IsOnOneWayPlatform => currentOneWayPlatform != null && Time.time <= currentOneWayPlatformUntil;
     public int FacingSign => facingRight ? 1 : -1;
     public bool UsesSideScrollerMovement => movementMode == MovementMode.SideScroller;
+    public bool UsesFree3DMovement => movementMode == MovementMode.Free3D;
     public Vector3 MovementAxis => UsesSideScrollerMovement ? movementAxis : lastMoveDirection;
     public Vector3 GroundCheckPosition => groundCheck != null ? groundCheck.position : transform.TransformPoint(groundCheckLocalOffset);
+    public Camera ResolveAimingCamera()
+    {
+        Transform cameraTransform = ResolveMovementCamera();
+        if (cameraTransform != null && cameraTransform.TryGetComponent(out Camera camera))
+        {
+            return camera;
+        }
+
+        Camera mainCamera = Camera.main;
+        if (mainCamera != null)
+        {
+            return mainCamera;
+        }
+
+        return Object.FindFirstObjectByType<Camera>();
+    }
 
     public bool WasRecentlyOnOneWayPlatform(float graceSeconds)
     {
@@ -360,8 +379,13 @@ public class PlayerMotor3D : MonoBehaviour
         }
 
         Vector3 rawMoveDirection = movementLocked ? Vector3.zero : ResolveMoveDirection(rawMoveInput);
+        bool forceFreeFacing = UsesFree3DMovement && Time.time < forcedFree3DFacingUntil;
 
-        if (!inputLocked && !IsDashing && rawMoveDirection.sqrMagnitude > 0.0001f)
+        if (forceFreeFacing)
+        {
+            FaceFreeDirection(forcedFree3DFacingDirection, true);
+        }
+        else if (!inputLocked && !IsDashing && rawMoveDirection.sqrMagnitude > 0.0001f)
         {
             Face(rawMoveDirection);
         }
@@ -1451,6 +1475,20 @@ public class PlayerMotor3D : MonoBehaviour
         transform.rotation = !immediate && maxDegreesDelta > 0f
             ? Quaternion.RotateTowards(transform.rotation, targetRotation, maxDegreesDelta)
             : targetRotation;
+    }
+
+    public void FaceTowardWorldPoint(Vector3 worldPoint, bool immediate = true)
+    {
+        Vector3 direction = worldPoint - transform.position;
+        direction.y = 0f;
+        if (direction.sqrMagnitude < 0.0001f)
+        {
+            return;
+        }
+
+        forcedFree3DFacingDirection = FlattenHorizontal(direction);
+        forcedFree3DFacingUntil = Time.time + 0.18f;
+        FaceFreeDirection(direction, immediate);
     }
 
     private void ApplyFacingRotation()

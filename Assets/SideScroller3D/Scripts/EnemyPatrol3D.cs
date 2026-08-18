@@ -8,6 +8,7 @@ public class EnemyPatrol3D : MonoBehaviour
 {
     private const string ContactDamageObjectName = "Enemy_ContactDamage";
     private const string DefaultHitSoundPath = "Assets/Art/Sound/Hit.wav";
+    private const float EdgeHysteresis = 0.35f;
 
     public enum AttackMode
     {
@@ -24,7 +25,7 @@ public class EnemyPatrol3D : MonoBehaviour
         ReturnHome
     }
 
-    private enum MovementMode
+    public enum MovementMode
     {
         Free3D,
         SideScroller
@@ -78,6 +79,11 @@ public class EnemyPatrol3D : MonoBehaviour
             this.name = name;
             this.canBeReflected = canBeReflected;
             this.rangedDistance = rangedDistance;
+        }
+
+        public BossProjectileType(EnemyBossProjectileDefinition3D definition)
+        {
+            ApplyDefinition(definition);
         }
 
         public string Name => string.IsNullOrEmpty(name) ? "BossProjectile" : name;
@@ -141,7 +147,54 @@ public class EnemyPatrol3D : MonoBehaviour
 
             hitSoundVolume = Mathf.Clamp01(hitSoundVolume);
         }
+
+        public void ApplyDefinition(EnemyBossProjectileDefinition3D definition)
+        {
+            if (definition == null)
+            {
+                return;
+            }
+
+            name = definition.name;
+            if (definition.visualTemplate != null)
+            {
+                visualTemplate = definition.visualTemplate;
+            }
+            canBeReflected = definition.canBeReflected;
+            projectileDamage = definition.projectileDamage;
+            projectileSpeed = definition.projectileSpeed;
+            projectileLifetime = definition.projectileLifetime;
+            rangedDistance = definition.rangedDistance;
+            hitSound = definition.hitSound;
+            hitSoundVolume = definition.hitSoundVolume;
+        }
+
+        public EnemyBossProjectileDefinition3D ToDefinition()
+        {
+            return new EnemyBossProjectileDefinition3D
+            {
+                name = name,
+                visualTemplate = visualTemplate,
+                canBeReflected = canBeReflected,
+                projectileDamage = projectileDamage,
+                projectileSpeed = projectileSpeed,
+                projectileLifetime = projectileLifetime,
+                rangedDistance = rangedDistance,
+                hitSound = hitSound,
+                hitSoundVolume = hitSoundVolume
+            };
+        }
     }
+
+    [Header("Definition")]
+    [Tooltip("Optional reusable enemy data asset. When assigned, this enemy can load its tuning from the asset.")]
+    [SerializeField] private EnemyDefinition3D enemyDefinition;
+
+    [Tooltip("Apply Enemy Definition values when the enemy starts playing.")]
+    [SerializeField] private bool applyDefinitionOnAwake = true;
+
+    [Tooltip("Apply Enemy Definition values in edit mode during validation. Keep disabled when locally tweaking a prefab override.")]
+    [SerializeField] private bool applyDefinitionInEditor;
 
     [Header("\u6575\u4eba\u985e\u578b")]
     [Tooltip("\u6575\u4eba\u7684\u653b\u64ca\u6a21\u5f0f\u3002Melee \u662f\u8fd1\u6230\uff0cRanged \u662f\u9060\u7a0b\u706b\u7403\u3002")]
@@ -313,6 +366,8 @@ public class EnemyPatrol3D : MonoBehaviour
     [SerializeField] private float respawnCameraAwaySeconds = 5f;
     [Tooltip("\u5224\u65b7\u51fa\u751f\u9ede\u662f\u5426\u96e2\u958b\u651d\u5f71\u6a5f\u756b\u9762\u6642\uff0c\u984d\u5916\u52a0\u4e0a\u7684\u756b\u9762\u5916\u7de9\u885d\u3002")]
     [SerializeField] private float respawnViewportPadding = 0.1f;
+    [Tooltip("\u6575\u4eba\u6700\u8fd1\u5b58\u5728\u65bc\u5075\u6e2c\u7bc4\u570d\u5167\u7684\u4fdd\u7559\u6642\u9593\uff0c\u7528\u4f86\u907f\u514d\u908a\u754c\u4e0a\u4f86\u56de\u5207\u63db\u8ffd\u64ca/\u8fd4\u5bb6\u3002")]
+    [SerializeField] private float targetLostGraceSeconds = 0.35f;
 
     private Rigidbody body;
     private Collider bodyCollider;
@@ -320,6 +375,7 @@ public class EnemyPatrol3D : MonoBehaviour
     private Transform target;
     private Transform cachedTargetColliderRoot;
     private Collider[] targetBodyColliders = new Collider[0];
+    private bool playerCollisionIgnoreApplied;
     private Transform projectileSpawn;
     private Transform projectileVisualTemplate;
     private Transform[] projectileVisualTemplates;
@@ -365,9 +421,193 @@ public class EnemyPatrol3D : MonoBehaviour
     private bool grounderWasEnabledBeforeDamage;
     private bool damageGravityStateStored;
     private bool useGravityBeforeDamage;
+    private float targetLostUntil = -1f;
 
     public AttackMode Mode => attackMode;
+    public EnemyDefinition3D Definition => enemyDefinition;
     private bool UsesFree3DMovement => movementMode == MovementMode.Free3D;
+
+    public void ApplyDefinition()
+    {
+        ApplyDefinition(enemyDefinition);
+    }
+
+    public void ApplyDefinition(EnemyDefinition3D definition)
+    {
+        if (definition == null)
+        {
+            return;
+        }
+
+        attackMode = definition.attackMode;
+        movementMode = definition.movementMode;
+        useTransformRightAsMovementAxis = definition.useTransformRightAsMovementAxis;
+        movementAxis = definition.movementAxis;
+        lockDepthToMovementPlane = definition.lockDepthToMovementPlane;
+        moveSpeed = definition.moveSpeed;
+        patrolMoveSpeed = definition.patrolMoveSpeed;
+        homeStopDistance = definition.homeStopDistance;
+        fallbackPatrolHalfWidth = definition.fallbackPatrolHalfWidth;
+        patrolRadius = definition.patrolRadius;
+        patrolDestinationReachDistance = definition.patrolDestinationReachDistance;
+        patrolDestinationMinDistance = definition.patrolDestinationMinDistance;
+        patrolObstacleMask = definition.patrolObstacleMask;
+        usePatrolObstacleMask = definition.usePatrolObstacleMask;
+        patrolObstacleCheckDistance = definition.patrolObstacleCheckDistance;
+        patrolObstacleRayHeights = definition.patrolObstacleRayHeights;
+
+        searchRange = definition.searchRange;
+        giveUpRange = definition.giveUpRange;
+        detectionBoxOffset = definition.detectionBoxOffset;
+        detectionBoxHeight = definition.detectionBoxHeight;
+        detectionBoxDepth = definition.detectionBoxDepth;
+        giveUpBoxPadding = definition.giveUpBoxPadding;
+        showDetectionBoxGizmo = definition.showDetectionBoxGizmo;
+        onlyShowDetectionBoxWhenSelected = definition.onlyShowDetectionBoxWhenSelected;
+
+        attackRange = definition.attackRange;
+        meleeAttackHeight = definition.meleeAttackHeight;
+        attackDamage = definition.attackDamage;
+        meleeHitSound = definition.meleeHitSound;
+        meleeHitSoundVolume = definition.meleeHitSoundVolume;
+
+        projectileDamage = definition.projectileDamage;
+        projectileSpeed = definition.projectileSpeed;
+        projectileLifetime = definition.projectileLifetime;
+        projectileHitSound = definition.projectileHitSound;
+        projectileHitSoundVolume = definition.projectileHitSoundVolume;
+        projectileLocalOffset = definition.projectileLocalOffset;
+        returnSpeed = definition.returnSpeed;
+
+        bossRangedDistance = definition.bossRangedDistance;
+        bossRangedDistanceTolerance = definition.bossRangedDistanceTolerance;
+        bossContactDamageEnabled = definition.bossContactDamageEnabled;
+        bossContactDamage = definition.bossContactDamage;
+        bossContactDamageCooldown = definition.bossContactDamageCooldown;
+        bossContactDamageBoxSize = definition.bossContactDamageBoxSize;
+        bossContactDamageBoxCenter = definition.bossContactDamageBoxCenter;
+        bossContactDamageTargetMask = definition.bossContactDamageTargetMask;
+        bossProjectileTypes = CloneBossProjectileTypes(definition.bossProjectileTypes);
+
+        attackCooldown = definition.attackCooldown;
+        useRangedAttackRhythm = definition.useRangedAttackRhythm;
+        rangedAttackRhythm = CloneFloatArray(definition.rangedAttackRhythm);
+        rangedAttackGroupCooldown = definition.rangedAttackGroupCooldown;
+        attackWindup = definition.attackWindup;
+        attackLockSeconds = definition.attackLockSeconds;
+
+        launchAwayOnDeath = definition.launchAwayOnDeath;
+        deathLaunchSpeed = definition.deathLaunchSpeed;
+        deathLaunchUpSpeed = definition.deathLaunchUpSpeed;
+        deathSpinDegreesPerSecond = definition.deathSpinDegreesPerSecond;
+        deathDestroyDelay = definition.deathDestroyDelay;
+
+        knockbackOnDamage = definition.knockbackOnDamage;
+        damageKnockbackForce = definition.damageKnockbackForce;
+        damageKnockbackLockSeconds = definition.damageKnockbackLockSeconds;
+        airborneHitPauseNormalizedTime = definition.airborneHitPauseNormalizedTime;
+        damageLandingRecoverySeconds = definition.damageLandingRecoverySeconds;
+        damageGroundCheckDistance = definition.damageGroundCheckDistance;
+        damageGroundMask = definition.damageGroundMask;
+
+        respawnAfterCameraLeaves = definition.respawnAfterCameraLeaves;
+        respawnCameraAwaySeconds = definition.respawnCameraAwaySeconds;
+        respawnViewportPadding = definition.respawnViewportPadding;
+
+        selectedBossProjectileIndex = -1;
+        ResetRangedAttackRhythm();
+        ValidateRangedAttackRhythm();
+        ValidateBossProjectileTypes();
+        ValidateBossContactDamageSettings();
+    }
+
+    public void SaveToDefinition()
+    {
+        SaveToDefinition(enemyDefinition);
+    }
+
+    public void SaveToDefinition(EnemyDefinition3D definition)
+    {
+        if (definition == null)
+        {
+            return;
+        }
+
+        definition.attackMode = attackMode;
+        definition.movementMode = movementMode;
+        definition.useTransformRightAsMovementAxis = useTransformRightAsMovementAxis;
+        definition.movementAxis = movementAxis;
+        definition.lockDepthToMovementPlane = lockDepthToMovementPlane;
+        definition.moveSpeed = moveSpeed;
+        definition.patrolMoveSpeed = patrolMoveSpeed;
+        definition.homeStopDistance = homeStopDistance;
+        definition.fallbackPatrolHalfWidth = fallbackPatrolHalfWidth;
+        definition.patrolRadius = patrolRadius;
+        definition.patrolDestinationReachDistance = patrolDestinationReachDistance;
+        definition.patrolDestinationMinDistance = patrolDestinationMinDistance;
+        definition.patrolObstacleMask = patrolObstacleMask;
+        definition.usePatrolObstacleMask = usePatrolObstacleMask;
+        definition.patrolObstacleCheckDistance = patrolObstacleCheckDistance;
+        definition.patrolObstacleRayHeights = patrolObstacleRayHeights;
+
+        definition.searchRange = searchRange;
+        definition.giveUpRange = giveUpRange;
+        definition.detectionBoxOffset = detectionBoxOffset;
+        definition.detectionBoxHeight = detectionBoxHeight;
+        definition.detectionBoxDepth = detectionBoxDepth;
+        definition.giveUpBoxPadding = giveUpBoxPadding;
+        definition.showDetectionBoxGizmo = showDetectionBoxGizmo;
+        definition.onlyShowDetectionBoxWhenSelected = onlyShowDetectionBoxWhenSelected;
+
+        definition.attackRange = attackRange;
+        definition.meleeAttackHeight = meleeAttackHeight;
+        definition.attackDamage = attackDamage;
+        definition.meleeHitSound = meleeHitSound;
+        definition.meleeHitSoundVolume = meleeHitSoundVolume;
+
+        definition.projectileDamage = projectileDamage;
+        definition.projectileSpeed = projectileSpeed;
+        definition.projectileLifetime = projectileLifetime;
+        definition.projectileHitSound = projectileHitSound;
+        definition.projectileHitSoundVolume = projectileHitSoundVolume;
+        definition.projectileLocalOffset = projectileLocalOffset;
+        definition.returnSpeed = returnSpeed;
+
+        definition.bossRangedDistance = bossRangedDistance;
+        definition.bossRangedDistanceTolerance = bossRangedDistanceTolerance;
+        definition.bossContactDamageEnabled = bossContactDamageEnabled;
+        definition.bossContactDamage = bossContactDamage;
+        definition.bossContactDamageCooldown = bossContactDamageCooldown;
+        definition.bossContactDamageBoxSize = bossContactDamageBoxSize;
+        definition.bossContactDamageBoxCenter = bossContactDamageBoxCenter;
+        definition.bossContactDamageTargetMask = bossContactDamageTargetMask;
+        definition.bossProjectileTypes = CloneBossProjectileDefinitions(bossProjectileTypes);
+
+        definition.attackCooldown = attackCooldown;
+        definition.useRangedAttackRhythm = useRangedAttackRhythm;
+        definition.rangedAttackRhythm = CloneFloatArray(rangedAttackRhythm);
+        definition.rangedAttackGroupCooldown = rangedAttackGroupCooldown;
+        definition.attackWindup = attackWindup;
+        definition.attackLockSeconds = attackLockSeconds;
+
+        definition.launchAwayOnDeath = launchAwayOnDeath;
+        definition.deathLaunchSpeed = deathLaunchSpeed;
+        definition.deathLaunchUpSpeed = deathLaunchUpSpeed;
+        definition.deathSpinDegreesPerSecond = deathSpinDegreesPerSecond;
+        definition.deathDestroyDelay = deathDestroyDelay;
+
+        definition.knockbackOnDamage = knockbackOnDamage;
+        definition.damageKnockbackForce = damageKnockbackForce;
+        definition.damageKnockbackLockSeconds = damageKnockbackLockSeconds;
+        definition.airborneHitPauseNormalizedTime = airborneHitPauseNormalizedTime;
+        definition.damageLandingRecoverySeconds = damageLandingRecoverySeconds;
+        definition.damageGroundCheckDistance = damageGroundCheckDistance;
+        definition.damageGroundMask = damageGroundMask;
+
+        definition.respawnAfterCameraLeaves = respawnAfterCameraLeaves;
+        definition.respawnCameraAwaySeconds = respawnCameraAwaySeconds;
+        definition.respawnViewportPadding = respawnViewportPadding;
+    }
 
     public void SetAttackMode(AttackMode mode)
     {
@@ -383,6 +623,11 @@ public class EnemyPatrol3D : MonoBehaviour
 
     private void OnValidate()
     {
+        if (applyDefinitionInEditor)
+        {
+            ApplyDefinition();
+        }
+
         AssignDefaultHitSoundsIfNeeded();
         meleeHitSoundVolume = Mathf.Clamp01(meleeHitSoundVolume);
         projectileHitSoundVolume = Mathf.Clamp01(projectileHitSoundVolume);
@@ -419,6 +664,11 @@ public class EnemyPatrol3D : MonoBehaviour
 
     private void Awake()
     {
+        if (applyDefinitionOnAwake)
+        {
+            ApplyDefinition();
+        }
+
         AssignDefaultHitSoundsIfNeeded();
         body = GetComponent<Rigidbody>();
         EnsureBodyCollider();
@@ -456,6 +706,51 @@ public class EnemyPatrol3D : MonoBehaviour
         }
 
         FindTarget();
+        ApplyPlayerCollisionIgnore();
+    }
+
+    private static BossProjectileType[] CloneBossProjectileTypes(EnemyBossProjectileDefinition3D[] definitions)
+    {
+        if (definitions == null)
+        {
+            return null;
+        }
+
+        BossProjectileType[] clones = new BossProjectileType[definitions.Length];
+        for (int i = 0; i < definitions.Length; i++)
+        {
+            clones[i] = new BossProjectileType(definitions[i]);
+        }
+
+        return clones;
+    }
+
+    private static float[] CloneFloatArray(float[] source)
+    {
+        if (source == null)
+        {
+            return null;
+        }
+
+        float[] clone = new float[source.Length];
+        source.CopyTo(clone, 0);
+        return clone;
+    }
+
+    private static EnemyBossProjectileDefinition3D[] CloneBossProjectileDefinitions(BossProjectileType[] source)
+    {
+        if (source == null)
+        {
+            return null;
+        }
+
+        EnemyBossProjectileDefinition3D[] clone = new EnemyBossProjectileDefinition3D[source.Length];
+        for (int i = 0; i < source.Length; i++)
+        {
+            clone[i] = source[i] != null ? source[i].ToDefinition() : null;
+        }
+
+        return clone;
     }
 
     private void OnEnable()
@@ -510,8 +805,10 @@ public class EnemyPatrol3D : MonoBehaviour
             FindTarget();
         }
 
+        ApplyPlayerCollisionIgnore();
+
         UpdateState();
-        visualAnimator?.SetCombatMode(state == EnemyState.Attack || IsTargetInAttackRange());
+        visualAnimator?.SetCombatMode(state == EnemyState.Attack || IsTargetInAttackRange(state == EnemyState.Attack));
 
         switch (state)
         {
@@ -557,12 +854,22 @@ public class EnemyPatrol3D : MonoBehaviour
             return;
         }
 
-        bool canNoticeTarget = IsTargetInsideDetectionBox(searchRange, detectionBoxHeight, detectionBoxDepth);
-        bool shouldGiveUp = !IsTargetInsideDetectionBox(giveUpRange, detectionBoxHeight + giveUpBoxPadding, detectionBoxDepth + giveUpBoxPadding);
-        bool targetInAttackRange = IsTargetInAttackRange();
         bool isEngaged = state == EnemyState.Chase || state == EnemyState.Attack;
+        bool canNoticeTarget = IsTargetInsideDetectionBox(searchRange, detectionBoxHeight, detectionBoxDepth, isEngaged);
+        if (canNoticeTarget)
+        {
+            targetLostUntil = Time.time + Mathf.Max(0f, targetLostGraceSeconds);
+        }
 
-        if (shouldGiveUp && isEngaged)
+        bool targetRecentlyVisible = canNoticeTarget || Time.time <= targetLostUntil;
+        bool shouldGiveUp = !IsTargetInsideDetectionBox(
+            giveUpRange,
+            detectionBoxHeight + giveUpBoxPadding,
+            detectionBoxDepth + giveUpBoxPadding,
+            isEngaged);
+        bool targetInAttackRange = IsTargetInAttackRange(state == EnemyState.Attack);
+
+        if (shouldGiveUp && isEngaged && !targetRecentlyVisible)
         {
             selectedBossProjectileIndex = -1;
             ResetRangedAttackRhythm();
@@ -570,14 +877,14 @@ public class EnemyPatrol3D : MonoBehaviour
             return;
         }
 
-        if (targetInAttackRange && attackMode != AttackMode.Ranged)
+        if (targetRecentlyVisible)
         {
-            state = EnemyState.Attack;
-            return;
-        }
+            if (targetInAttackRange && attackMode != AttackMode.Ranged)
+            {
+                state = EnemyState.Attack;
+                return;
+            }
 
-        if (canNoticeTarget)
-        {
             if (attackMode == AttackMode.Ranged)
             {
                 state = EnemyState.Attack;
@@ -586,11 +893,17 @@ public class EnemyPatrol3D : MonoBehaviour
 
             if (attackMode == AttackMode.Boss)
             {
-                state = IsBossReadyToAttack() ? EnemyState.Attack : EnemyState.Chase;
+                state = IsBossReadyToAttack(state == EnemyState.Attack) ? EnemyState.Attack : EnemyState.Chase;
                 return;
             }
 
             state = targetInAttackRange ? EnemyState.Attack : EnemyState.Chase;
+            return;
+        }
+
+        if (isEngaged)
+        {
+            state = EnemyState.Chase;
             return;
         }
 
@@ -1000,7 +1313,7 @@ public class EnemyPatrol3D : MonoBehaviour
         SideScrollerSfxPlayer.PlayOneShot(clip, volume);
     }
 
-    private bool IsTargetInAttackRange()
+    private bool IsTargetInAttackRange(bool isCurrentlyAttacking)
     {
         if (target == null)
         {
@@ -1015,20 +1328,20 @@ public class EnemyPatrol3D : MonoBehaviour
 
         if (attackMode == AttackMode.Ranged)
         {
-            return IsTargetInsideDetectionBox(searchRange, detectionBoxHeight, detectionBoxDepth);
+            return IsTargetInsideDetectionBox(searchRange, detectionBoxHeight, detectionBoxDepth, isCurrentlyAttacking);
         }
 
         if (attackMode == AttackMode.Boss)
         {
             if (state != EnemyState.Chase && state != EnemyState.Attack)
             {
-                return horizontalDistance <= attackRange;
+                return horizontalDistance <= GetBufferedAttackRange(isCurrentlyAttacking);
             }
 
-            return horizontalDistance <= attackRange || IsBossAtRangedDistance(horizontalDistance);
+            return horizontalDistance <= GetBufferedAttackRange(isCurrentlyAttacking) || IsBossAtRangedDistance(horizontalDistance, isCurrentlyAttacking);
         }
 
-        return horizontalDistance <= attackRange;
+        return horizontalDistance <= GetBufferedAttackRange(isCurrentlyAttacking);
     }
 
     private float GetPatrolSpeed()
@@ -1062,7 +1375,7 @@ public class EnemyPatrol3D : MonoBehaviour
         return shouldUseRanged;
     }
 
-    private bool IsBossReadyToAttack()
+    private bool IsBossReadyToAttack(bool isCurrentlyAttacking)
     {
         if (target == null)
         {
@@ -1070,18 +1383,18 @@ public class EnemyPatrol3D : MonoBehaviour
         }
 
         float horizontalDistance = GetHorizontalDistanceToTarget();
-        if (horizontalDistance <= attackRange)
+        if (horizontalDistance <= GetBufferedAttackRange(isCurrentlyAttacking))
         {
             return true;
         }
 
-        return IsBossAtRangedDistance(horizontalDistance);
+        return IsBossAtRangedDistance(horizontalDistance, isCurrentlyAttacking);
     }
 
-    private bool IsBossAtRangedDistance(float horizontalDistance)
+    private bool IsBossAtRangedDistance(float horizontalDistance, bool isCurrentlyAttacking)
     {
         float desiredDistance = Mathf.Max(attackRange + 0.05f, GetCurrentBossRangedDistance());
-        float tolerance = Mathf.Max(0.01f, bossRangedDistanceTolerance);
+        float tolerance = Mathf.Max(0.01f, bossRangedDistanceTolerance + (isCurrentlyAttacking ? EdgeHysteresis : -EdgeHysteresis));
         return Mathf.Abs(horizontalDistance - desiredDistance) <= tolerance;
     }
 
@@ -1616,7 +1929,7 @@ public class EnemyPatrol3D : MonoBehaviour
         return true;
     }
 
-    private bool IsTargetInsideDetectionBox(float axisRange, float boxHeight, float boxDepth)
+    private bool IsTargetInsideDetectionBox(float axisRange, float boxHeight, float boxDepth, bool isCurrentlyEngaged)
     {
         if (target == null)
         {
@@ -1628,7 +1941,7 @@ public class EnemyPatrol3D : MonoBehaviour
         float halfHeight = Mathf.Max(0.01f, boxHeight * 0.5f);
         if (UsesFree3DMovement)
         {
-            return GetTargetHorizontalDistanceFrom(center) <= Mathf.Max(0.01f, axisRange)
+            return GetTargetHorizontalDistanceFrom(center) <= GetBufferedAxisRange(axisRange, isCurrentlyEngaged)
                 && IsTargetWithinVerticalRange(center.y, halfHeight);
         }
 
@@ -1640,16 +1953,23 @@ public class EnemyPatrol3D : MonoBehaviour
             && Mathf.Abs(Vector3.Dot(delta, depthAxis)) <= halfDepth;
     }
 
+    private float GetBufferedAxisRange(float axisRange, bool expand)
+    {
+        float buffer = expand ? EdgeHysteresis : -EdgeHysteresis;
+        return Mathf.Max(0.01f, axisRange + buffer);
+    }
+
+    private float GetBufferedAttackRange(bool isCurrentlyAttacking)
+    {
+        return Mathf.Max(0.01f, attackRange + (isCurrentlyAttacking ? EdgeHysteresis : -EdgeHysteresis));
+    }
+
     private Vector3 GetDetectionBoxCenter()
     {
         if (UsesFree3DMovement)
         {
-            Vector3 facing = GetFacingDirection();
-            Vector3 side = Vector3.Cross(Vector3.up, facing).normalized;
             return transform.position
-                + facing * detectionBoxOffset.x
-                + Vector3.up * detectionBoxOffset.y
-                + side * detectionBoxOffset.z;
+                + Vector3.up * detectionBoxOffset.y;
         }
 
         return transform.position
@@ -1677,9 +1997,9 @@ public class EnemyPatrol3D : MonoBehaviour
 
     private float GetTargetHorizontalDistanceFrom(Vector3 origin)
     {
-        if (TryGetClosestTargetBodyPoint(origin, out Vector3 closestPoint))
+        if (TryGetTargetFocusPoint(out Vector3 targetPoint))
         {
-            return UsesFree3DMovement ? GetPlanarDistanceBetween(origin, closestPoint) : Mathf.Abs(Vector3.Dot(closestPoint - origin, movementAxis));
+            return UsesFree3DMovement ? GetPlanarDistanceBetween(origin, targetPoint) : Mathf.Abs(Vector3.Dot(targetPoint - origin, movementAxis));
         }
 
         return target != null ? GetHorizontalDistanceTo(target.position) : float.MaxValue;
@@ -1699,11 +2019,11 @@ public class EnemyPatrol3D : MonoBehaviour
 
     private Vector3 GetMoveDirectionToTarget()
     {
-        if (target != null && TryGetClosestTargetBodyPoint(transform.position, out Vector3 closestPoint))
+        if (target != null && TryGetTargetFocusPoint(out Vector3 targetPoint))
         {
             Vector3 direction = UsesFree3DMovement
-                ? FlattenHorizontalOrZero(closestPoint - transform.position)
-                : movementAxis * Mathf.Sign(Vector3.Dot(closestPoint - transform.position, movementAxis));
+                ? FlattenHorizontalOrZero(targetPoint - transform.position)
+                : movementAxis * Mathf.Sign(Vector3.Dot(targetPoint - transform.position, movementAxis));
             if (direction.sqrMagnitude > 0.0001f)
             {
                 return direction;
@@ -1727,6 +2047,24 @@ public class EnemyPatrol3D : MonoBehaviour
         }
 
         return movementAxis * Mathf.Sign(axisDelta);
+    }
+
+    private bool TryGetTargetFocusPoint(out Vector3 focusPoint)
+    {
+        focusPoint = default;
+        if (target == null)
+        {
+            return false;
+        }
+
+        if (TryGetTargetBodyBounds(out Bounds bounds))
+        {
+            focusPoint = bounds.center;
+            return true;
+        }
+
+        focusPoint = target.position;
+        return true;
     }
 
     private Vector3 GetFacingDirection()
@@ -2053,6 +2391,53 @@ public class EnemyPatrol3D : MonoBehaviour
         }
     }
 
+    private void ApplyPlayerCollisionIgnore()
+    {
+        if (playerCollisionIgnoreApplied)
+        {
+            return;
+        }
+
+        EnsureBodyCollider();
+        if (bodyCollider == null)
+        {
+            return;
+        }
+
+        PlayerMotor3D player = target != null ? target.GetComponentInParent<PlayerMotor3D>() : Object.FindFirstObjectByType<PlayerMotor3D>();
+        if (player == null)
+        {
+            return;
+        }
+
+        Collider[] enemyColliders = GetComponentsInChildren<Collider>(true);
+        Collider[] playerColliders = player.GetComponentsInChildren<Collider>(true);
+        bool ignoredAnyCollision = false;
+
+        for (int i = 0; i < enemyColliders.Length; i++)
+        {
+            Collider enemyCollider = enemyColliders[i];
+            if (enemyCollider == null || enemyCollider.isTrigger || !enemyCollider.enabled)
+            {
+                continue;
+            }
+
+            for (int j = 0; j < playerColliders.Length; j++)
+            {
+                Collider playerCollider = playerColliders[j];
+                if (playerCollider == null || playerCollider.isTrigger || !playerCollider.enabled)
+                {
+                    continue;
+                }
+
+                Physics.IgnoreCollision(enemyCollider, playerCollider, true);
+                ignoredAnyCollision = true;
+            }
+        }
+
+        playerCollisionIgnoreApplied = ignoredAnyCollision;
+    }
+
     private void Die()
     {
         if (deathSequenceStarted)
@@ -2192,6 +2577,7 @@ public class EnemyPatrol3D : MonoBehaviour
         state = EnemyState.Patrol;
         selectedBossProjectileIndex = -1;
         ResetRangedAttackRhythm();
+        targetLostUntil = -1f;
         attackResolved = true;
         nextAttackTime = Time.time + 0.25f;
         attackResolveTime = 0f;
